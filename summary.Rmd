@@ -1,0 +1,907 @@
+---
+title: "Avocado Satiety Study"
+output: github_document
+always_allow_html: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+
+# Setup -------------------------------------------------------------------
+
+Sys.setlocale("LC_CTYPE", "English_United States.utf8")
+
+# Required packages
+pacs <- c("tidyverse", "readxl", "janitor", "hms", "tableone", "kableExtra", "ggridges", "patchwork")
+sapply(pacs, require, character.only = TRUE)
+
+# Function to search variables
+search_var <- function(df, pattern, ...) {
+  loc <- grep(pattern, names(df), ...)
+  if (length(loc) == 0) warning("There are no such variables")
+  else return(data.frame(loc = loc, varname = names(df)[loc]))
+}
+
+```
+
+## Description
+
+* A secondary analysis of the Habitual Diet and Avocado Trial (HAT), a randomized clinical trial of two-arm parallel design
+* This study examines how avocado consumption affects energy intake, energy density, and meal intervals
+* The unit of analysis is eating occasion, either meals or snacks
+
+## Datasets
+
+* There are five data files:
+  * `macro_protocol3.xlsx`
+    * Includes patient demographics
+    * n = 900 participants, `cpartid` are all distinct
+    
+  * `HAT_SCMeal.csv`
+    * Meal-level data from NDSR
+    * Used to identify meals containing avocado (`rfgscmFRU500`, in serving size)
+    * n = 19,643 meals
+    
+  * `meal_timdiff_updated.xlsx`
+    * Also meal-level data, but time of the meal and meal order were manually corrected
+    * Includes `Coding` -- what types of error was identified for each meal, if any  
+    * n = 19,643 meals
+    
+  * `Gram_kcal_new2.csv`
+    * Also meal-level data, but includes total intake as well as food intake (excluding beverages)
+    * n = 19,643 meals
+    
+  * `HAT_Intake.csv`
+    * recall-day-level data
+    * Includes day of the week, total kcal per day
+    * n = 3901 recall days
+
+* Five datasets were merged together to create an analytic dataset
+
+```{r data_prep}
+
+# Read data ---------------------------------------------------------------
+
+# The following 5 files were used to create an analytic data
+# Subject ID is: pid  (convert cpartid to pid if necessary)
+
+# Protocol file
+# Includes all participants who had two or more compliant recalls
+# Will be used as demographic data
+# n = 900 (cpartid all distinct)
+protocol <- read_excel("./data/macro_protocol3.xlsx") %>%
+  clean_names() %>%
+  rename(pid = cpartid) %>%
+  select(pid, site_id, randarm, education, sex, age, bmi, waist, race)
+
+# Contains food group serving counts at the meal or eating occasion level (FGSCMeal),
+# Used to identify meals with avocado
+# Avocado intake = rfgscmFRU500
+# n = 19,643
+meal_servings <- read_csv("./data/HAT_SCMeal.csv") %>%
+  mutate(tmtime = as.numeric(tmtime))        # readxl reads times as hms; convert to seconds
+
+# Revised Meal file (per meal)
+# Contains corrected meal time 
+# n = 19,643
+meals_updated <- read_excel("./data/meal_timdiff_updated.xlsx") %>%
+  clean_names() %>%
+  rename(pid = cpartid) %>%
+  mutate(
+    tmtime = as_hms(tmtime),                 # tmtime read as datetime, convert to hms
+    tmtime = as.numeric(tmtime))             # convert to seconds
+
+# Total intake (gram, kcal) per meal, separating beverages 
+# Appears to be based on meal file
+# This will be used instead of meal file
+# n = 19,643
+non_beverages <- read_csv("./data/Gram_kcal_new2.csv") %>%
+  mutate(pid = as.numeric(cpartid)) %>%
+  select(-cpartid)
+
+# Intake (per day) file
+# Contains total nutrient intake per day for each participant
+# Needed: intake day of the week
+# idow: 0 = Sunday, 1 = Monday,..., 6 = Saturday 
+# n = 3,901
+intake <- read_csv("./data/HAT_Intake.csv") %>%
+  mutate(day_of_wk = if_else(idow %in% c(0, 6), 0L, 1L),
+         kcal_per_day = rikcal) %>%
+  select(pid, visitcode, day_of_wk, kcal_per_day, idow)
+
+
+# Identify meals with avocado ---------------------------------------------
+
+# Assume one whole avocado = 168 gram
+# One whole avocado = 2.24 serving size
+
+# Avocado intake categories
+avocado_intake_cat_labels <- c(
+  "No avocado at all", 
+  "<1 avocado", 
+  "1 whole avocado or more" 
+)
+
+# Based on meal_serving file
+# Order by pid, visit, and meal sequence
+# Identify meals with avocado intake
+meal_servings2 <- meal_servings %>%
+  arrange(pid, visitcode, cmealid) %>%
+  group_by(pid, visitcode) %>%
+  mutate(
+    meal_with_avocado  = if_else(rfgscmFRU0500 > 2.23, 1L, 0L),
+    avocado_gram       = rfgscmFRU0500 * 168 / 2.24,
+    avocado_intake_cat = case_when(
+      avocado_gram == 0                        ~ 1L,
+      avocado_gram > 0   & avocado_gram < 168  ~ 2L,
+      avocado_gram >= 168                      ~ 3L,
+      
+    ),
+    avocado_intake_cat = factor(avocado_intake_cat, levels = 1:3, labels = avocado_intake_cat_labels),
+    # meal_after_avocado = if_else(cmealid == 1, NA_integer_, lag(meal_with_avocado)),
+    # previous_avcd_intk = if_else(cmealid == 1, NA_real_,    lag(rfgscmFRU0500)),
+    # previous_meal      = if_else(cmealid == 1, NA_real_,    lag(as.numeric(imname)))
+    # tmtime             = if_else(tmtime == 0 , 3600 * 24,   as.numeric(tmtime)),
+    # meal_interval      = if_else(cmealid == 1, NA_real_,    (tmtime - lag(tmtime)) / 3600)
+  ) %>%
+  ungroup() %>%
+  select(
+    pid, 
+    visitcode, 
+    cmealid, 
+    imname, 
+    rfgscmFRU0500,
+    meal_with_avocado,
+    avocado_gram,
+    avocado_intake_cat,
+    # meal_after_avocado, 
+    # previous_avcd_intk, 
+    # previous_meal 
+    # meal_interval
+  )
+
+# analytic_df %>% 
+  # filter(is.na(meal_with_avocado))
+
+# Correcting meal names ---------------------------------------------------
+
+# Based on meals_updated
+# meal_freq will be re-calculated at later step
+meals_updated2 <- meals_updated %>%
+  arrange(pid, visitcode, cmealid) %>%
+  group_by(pid, visitcode) %>%
+  mutate(
+    tmtime        = if_else(tmtime == 0 & cmealid > 1, 3600 * 24,   as.numeric(tmtime)),
+    meal_interval = if_else(cmealid == 1 | coding %in% c(3, 5), NA_real_, (tmtime - lag(tmtime)) / 3600),
+    coding        = if_else(coding == 0, 2L, as.integer(coding)),
+    # meal_freq     = sum(imname != 8)
+  ) %>%
+  ungroup() %>%
+  rename(tmtime_fixed = tmtime) %>%
+  select(pid, visitcode, cmealid, imname, tmtime_fixed, meal_interval, coding)
+
+
+# Merge files for analytic dataset ----------------------------------------
+
+# Time threshold (in seconds)
+t11 <- 11 * 3600
+t12 <- 12 * 3600
+t17 <- 17 * 3600 
+
+# Category labels
+race_labels      <- c("African American", "Asian", "Caucasian", "Other")
+educ_labels      <- c("None", "Vocational school", "College degree", "Graduate degree")
+meal_type_labels <- c(
+  "Morning meal", 
+  "Morning snack", 
+  "Midday meal", 
+  "Midday snack", 
+  "Evening meal", 
+  "Late night snack",
+  "Beverage"
+)
+meal_place_labels <- c(
+  "Home/Friend's home",
+  "Work/School",
+  "Deli/Take-out/Restaurant",
+  "Daycare/Party/Travelling/Other"
+)
+
+# Merge files
+# Begin with meals_updated2
+analytic_df <- meals_updated2 %>%
+
+  # Inner-join non_beverages
+  # Calculate total density, food kcal/grams, and food density
+  # Note that food density > 9 is set to missing (5 meals affected)
+  inner_join(
+    non_beverages %>%
+    select(-imname) %>% 
+      mutate(
+        total_density = total_kcal / total_gram,
+        food_kcal     = total_kcal - bvrg_kcal,
+        food_gram     = total_gram - bvrg_gram,
+        food_density  = food_kcal / food_gram,
+        food_density  = if_else(food_density > 9, NA_real_, food_density)
+      ),
+    by = c("pid", "visitcode", "cmealid")
+  ) %>%
+  
+  # Inner-join meal_servings2 
+  inner_join(meal_servings2 %>% select(-imname), by = c("pid", "visitcode", "cmealid")) %>%
+  
+  # Restrict to per-protocol participants; add demographics
+  inner_join(protocol, by = "pid") %>%
+  
+  # Inner-join with intake per day file: add day_of_wk, kcal_per_day 
+  inner_join(intake,   by = c("pid", "visitcode")) %>%
+  
+  # Correct 3 meals miscoded as beverages
+  mutate(imname = case_when(
+    pid == 15120643 & visitcode == "DT4" & cmealid == 1 ~ 4L,
+    pid == 15131688 & visitcode == "DT4" & cmealid == 1 ~ 1L,
+    pid == 10004467 & visitcode == "DT2" & cmealid == 7 ~ 4L,
+    TRUE ~ as.integer(imname)
+  )) %>%
+
+  # Recode variables 
+  mutate(
+    bmi_cat = case_when(
+      bmi < 25             ~ 1,
+      bmi >= 25 & bmi < 30 ~ 2,
+      bmi >= 30            ~ 3
+    ),
+    bmi_cat = factor(bmi_cat, labels = c("Normal", "Overweight", "Obese")),
+    
+    region = case_when(
+      site_id %in% c(401, 402, 501) ~ 1L,  # East Coast
+      site_id %in% c(201, 301)      ~ 2L   # West Coast
+      ),
+    region = factor(region, labels = c("East coast", "West coast")),
+    
+    hour = tmtime_fixed / 3600,
+    
+    meal_type  = case_when(
+      imname == 8                                             ~ 9L,  # Beverage
+      imname == 4 & tmtime_fixed <= t12                       ~ 2L,  # Morning snack
+      imname == 4 & tmtime_fixed >  t12 & tmtime_fixed <= t17 ~ 4L,  # PM snack
+      imname == 4 & tmtime_fixed >  t17                       ~ 6L,  # HS snack
+      tmtime_fixed <= t11                                     ~ 1L,  # Morning meal
+      tmtime_fixed >  t11 & tmtime_fixed < t17                ~ 3L,  # Midday meal
+      tmtime_fixed >= t17                                     ~ 5L   # Evening meal
+    ),
+    meal_or_snack = if_else(meal_type %in% c(2, 4, 6), 1, 0),
+    meal_type     = factor(meal_type, labels = meal_type_labels),
+    meal_or_snack = factor(meal_or_snack, labels = c("Meal", "Snack")), 
+    
+    idow = factor(idow, labels = c("Sun", "Mon", "Tue", "Wed", "Thur", "Fri", "Sat")),
+    
+    meal_place  = case_when(
+      implace %in% c(1, 10)             ~ 1L,  # Home / Friend's home
+      implace %in% c(2, 3)              ~ 2L,  # Work / School
+      implace %in% c(6, 7)              ~ 3L,  # Deli/take-out / Restaurant
+      implace %in% c(4, 11, 12, 13, 14) ~ 4L   # Daycare / Party / Other / Travelling
+    ),
+    meal_place = factor(meal_place, labels = meal_place_labels),
+    
+    race = factor(race, labels = race_labels),
+    race = relevel(race, ref = "Caucasian"),
+    
+    educ_level = case_when(
+      education %in% c(0, 1) ~ 1L,     # No high school / none
+      education %in% c(2, 6) ~ 2L,     # Vocational / professional school
+      education %in% c(3, 4) ~ 3L,     # Community / 4-year college
+      education == 5         ~ 4L      # Graduate school
+    ),
+    educ_level = factor(educ_level, labels = educ_labels),
+    
+    # previous_meal_type = case_when(
+    #   previous_meal %in% c(1, 2, 3, 5, 6)  ~ 0L,  # Any meal
+    #   previous_meal == 4                   ~ 1L,  # Snack
+    #   previous_meal == 8                   ~ 2L   # Beverage
+    # ),
+  ) %>%
+  
+  # Final exclusions: avocado arm only, no baseline, no beverages, no trace meals (total kcal >= 20, food kcal > 0.3)
+  filter(
+    randarm   == 1,
+    visitcode != "DT1",
+    total_kcal >= 20,
+    imname    != 8,
+    food_kcal > 0.3
+  ) %>% 
+  
+  # Recalculate meal frequency
+  add_count(pid, visitcode, name = "meal_freq") %>%
+  
+  # Recalculate meal interval: meal_interval_hr
+  arrange(pid, visitcode, cmealid) %>% 
+  group_by(pid, visitcode) %>% 
+  mutate(
+    meal_interval_hr = (tmtime_fixed - lag(tmtime_fixed)) / 60 ^ 2,
+    meal_interval_hr = ifelse(coding %in% c(3, 5), NA_real_, meal_interval_hr),
+    lag_avocado_intake_cat = lag(avocado_intake_cat)
+  ) %>% 
+  ungroup()
+
+```
+
+## Inclusion/exclusion criteria
+
+* Note that the data has a three-level nested structure: Participants - Recall day - Meals of the day
+
+* At the participant level:
+  * Includes only those in the avocado arm
+
+* At the recall-day level:
+  * Excludes baseline food recalls (`DT1`)
+
+* At the meal level:
+  * Excludes beverage-only eating occasions
+  * Excludes meals with total kcal less than 20 kcal
+  * Excludes meals with food kcal less than 0.3 kcal (misclassified as meals/snacks, rather than beverages)
+
+* After applying inclusion/exclusion criteria, the analytic data include:
+  * n = 436 participants, all from the avocado arm
+  * n = 1,296 recall days
+    * Most of the participants (97.2%) have 3 recall days
+    * Twelve participants have only 2 recall days
+  * n = 4990 meals
+
+## Outcomes
+
+* Total energy content (kcal) of eating occasions
+
+* Energy density (kcal / grams) of eating occasions
+  * If the energy density is greater than 9, this was set to as missing (implausible)
+    * These meals with density > 9 will be excluded from the analysis on energy density
+
+* Meal interval (in hours), or time passed since the previous eating occasion of the day, excluding beverages
+  * For the first eating occasion of the day, meal interval is NOT calculated (missing)
+  * Some meal times were incorrectly recorded and the correct times could not be determined -- set to missing
+    * (`Coding = 3 or 5`; beverage-related? See the email from AC on 5/18/2026)
+  * These meals will be excluded from analysis on meal intervals
+
+
+## Descriptive analysis 
+
+### Participant characteristics
+
+```{r participant_characteristics}
+
+# Descriptive table -------------------------------------------------------
+
+## Demographics -----------------------------------------------------------
+
+demog <- analytic_df %>%
+  distinct(pid, sex, race, bmi_cat, bmi, educ_level, region, waist, age)
+
+demog_renamed <- demog %>%
+  rename(
+    "Age, years"              = age,
+    "Sex"                     = sex,
+    "Race/Ethnicity"          = race,
+    "Education level"         = educ_level,
+    "Region"                  = region,
+    "BMI category"            = bmi_cat,
+    "BMI, kg/m²"              = bmi,
+    "Waist circumference, cm" = waist
+  )
+
+table_vars <- c(
+  "Age, years", 
+  "Sex", 
+  "Race/Ethnicity", 
+  "Education level",
+  "Region", 
+  "BMI category", 
+  "BMI, kg/m²", 
+  "Waist circumference, cm"
+)
+
+CreateTableOne(vars = table_vars, data = demog_renamed) %>%
+  print(showAllLevels = TRUE, contDigits = 1) %>%
+  kableone() %>%
+  column_spec(1, bold = TRUE)
+
+```
+
+### Recall day
+
+* Out of 1,296 recall days, about 30% were during weekends
+  * The number of recalls on Fridays was notably lower compared to other days of the week
+* The number of meals/snacks eaten across days of the week appears to be consistent
+* Meal kcal per day appears to be higher on Saturdays
+
+```{r recall_day_desc}
+
+analytic_df %>%
+  group_by(pid, visitcode, idow, kcal_per_day) %>%
+  summarise(n_meals = n(), .groups = "drop") %>%
+  group_by(idow) %>%
+  summarise(
+    n_visits = n(),
+    mean_n_meals = mean(n_meals),
+    mean_kcal_per_day = mean(kcal_per_day)
+  ) %>%
+  mutate(percent = n_visits / sum(n_visits) * 100) %>% 
+  select(idow, n_visits, percent, mean_n_meals, mean_kcal_per_day) %>% 
+  knitr::kable(digits = 2, col.names = c("Day of the week", "No. recalls", "%", "Mean # of meals", "Mean kcal/day"))
+
+```
+
+### Meal-level 
+
+#### Meal type
+
+* Definition: Meal type (meal period):
+  * Morning meal (00:00 to 11:00)
+  * Midday meal  (11:01 to 16:59) 
+  * Evening meal (17:00 to 23:59)
+  * Morning snack    (00:00 to 11:59) 
+  * Evening snacks   (12:00 to 16:59) 
+  * Late-night snack (17:00 to 23:59) 
+
+* Frequency table by meal/snack and mean energy per meal
+  * The number of morning, midday, evening meals were approximately equal
+  * The number of snacks increases as the day progresses
+  * The energy content of meals and snacks also increases as the day progresses
+
+```{r meal_desc}
+
+# Descriptive stats by meal type
+tab <- analytic_df %>% 
+  mutate(meal_type = droplevels(meal_type)) %>% 
+  CreateTableOne(
+    vars = c("total_kcal", "food_kcal"),
+    strata = "meal_type",
+    data = .,
+    test = FALSE
+  )
+
+tab_df <- as.data.frame(print(tab, printToggle = FALSE, digits = 1)) %>%
+  rownames_to_column("variable") %>%
+  pivot_longer(-variable, names_to = "meal_type", values_to = "value") %>%
+  pivot_wider(names_from = variable, values_from = value) %>%
+  left_join(
+    analytic_df %>% distinct(meal_type, meal_or_snack),
+    by = "meal_type"
+  ) %>%
+  mutate(percent = sprintf("%.1f", parse_number(n) / nrow(analytic_df) * 100)) %>% 
+  arrange(meal_or_snack) %>% 
+  select(meal_type, n, percent, `total_kcal (mean (SD))`, `food_kcal (mean (SD))`)
+
+tab_df %>% 
+  knitr::kable(col.names = c("Meal/Snack", "n", "%", "Mean total kcal (SD)", "Mean food kcal (SD)"))
+
+```
+
+* A density plot of food kcal by meal and snack type shows a similar trend
+
+```{r meal_density}
+
+# Density plot of food kcal by meal/snack type
+analytic_df %>% 
+  filter(food_kcal > 0) %>% 
+  ggplot(aes(x = food_kcal, y = fct_rev(meal_type), fill = meal_type)) +
+  geom_density_ridges(alpha = 0.5) +
+  theme_ridges() + 
+  theme(
+    legend.position = "none",
+    axis.title.x = element_text(hjust = 0.5)
+  ) +
+  labs(x = "Food kcal per meal (log axis)", y = "") +
+  scale_x_log10() +
+  coord_cartesian(xlim = c(10, 5000)) +
+  facet_grid(meal_or_snack ~., scales = "free_y") 
+
+```
+
+#### Meal place
+
+* Meal place 
+  * Among 4,990 meals, 68% of them were eaten at home or friend's home
+  * The energy content was much higher when eaten at delis/restaurants or ordering takeout
+  
+```{r meal_place}
+
+# Meal place and mean energy
+tab <- analytic_df %>% 
+  CreateTableOne(
+    vars = c("total_kcal", "food_kcal"),
+    strata = "meal_place",
+    data = .,
+    test = FALSE
+  )
+
+tab_df <- as.data.frame(print(tab, printToggle = FALSE, digits = 1)) %>%
+  rownames_to_column("variable") %>%
+  pivot_longer(-variable, names_to = "meal_place", values_to = "value") %>%
+  pivot_wider(names_from = variable, values_from = value) %>%
+  mutate(percent = sprintf("%.1f", parse_number(n) / nrow(analytic_df) * 100)) %>% 
+  select(meal_place, n, percent, `total_kcal (mean (SD))`, `food_kcal (mean (SD))`)
+
+tab_df %>% 
+  knitr::kable(col.names = c("Meal place", "n", "%", "Mean total kcal (SD)", "Mean food kcal (SD)"))
+
+```
+
+### Outcomes
+
+#### Energy content (food kcal)
+
+* The distribution of food kcal per meal/snack is right-skewed 
+  * The mean (SD) food kcal was 482 (355.3) kcal
+
+```{r distr_food_kcal, fig.height = 4, fig.width = 8}
+
+# Kcal from food meal, excluding beverages
+analytic_df %>% 
+  summarize(
+    min     = min(food_kcal),
+    Q1      = quantile(food_kcal, prob = 0.25),
+    Median  = quantile(food_kcal, prob = 0.50),
+    Mean    = mean(food_kcal, na.rm = TRUE),
+    SD      = sd(food_kcal, na.rm = TRUE),
+    Q3      = quantile(food_kcal, prob = 0.75),
+    max     = max(food_kcal)
+  ) %>% 
+  knitr::kable(col.names = c("Min", "Q1", "Median", "Mean", "SD", "Q3", "Max"), digits = 1)
+
+# Distribution of food kcal
+# Histogram
+p1 <- analytic_df %>% 
+  ggplot(aes(x = food_kcal)) +
+  geom_histogram() +
+  labs(
+    y = "Number of meals", 
+    x = "Energy content per meal",
+    title = "Histogram of food kcal"
+  )
+
+# ECDF
+p2 <- analytic_df %>% 
+  ggplot(aes(x = food_kcal)) +
+  stat_ecdf() +
+  scale_y_continuous(labels = scales::percent) +
+  labs(
+    y = "Cumlative percentage", 
+    x = "Energy content per meal",
+    title = "Cumulative distribution of food kcal"
+  )
+
+p1 + p2
+
+```
+
+#### Energy density
+
+* The distribution of food density is slightly right-skewed 
+  * The mean (SD) food density was 2.17 (1.31) kcal/g
+
+```{r distr_food_density, fig.height = 4, fig.width = 8}
+
+# Food density, descriptive stats 
+analytic_df %>% 
+  filter(!is.na(food_density)) %>% 
+  summarize(
+    min     = min(food_density),
+    Q1      = quantile(food_density, prob = 0.25),
+    Median  = quantile(food_density, prob = 0.50),
+    Mean    = mean(food_density),
+    SD      = sd(food_density),
+    Q3      = quantile(food_density, prob = 0.75),
+    max     = max(food_density)
+  ) %>% 
+  knitr::kable(col.names = c("Min", "Q1", "Median", "Mean", "SD", "Q3", "Max"), digits = 2)
+
+# Distribution of food density 
+# Histogram
+p1 <- analytic_df %>% 
+  ggplot(aes(x = food_density)) +
+  geom_histogram() +
+  labs(
+    y = "Number of meals", 
+    x = "Food density",
+    title = "Histogram of food density"
+  )
+
+# ECDF
+p2 <- analytic_df %>% 
+  ggplot(aes(x = food_density)) +
+  stat_ecdf() +
+  scale_y_continuous(labels = scales::percent) +
+  labs(
+    y = "Cumlative percentage", 
+    x = "Food density",
+    title = "Cumulative distribution of food density"
+  )
+
+p1 + p2
+
+```
+
+#### Meal interval
+
+```{r distr_meal_interval, fig.height = 4, fig.width = 8}
+analytic_df %>% 
+  filter(!is.na(meal_interval_hr)) %>% 
+  summarize(
+    min     = min(meal_interval_hr),
+    Q1      = quantile(meal_interval_hr, prob = 0.25),
+    Median  = quantile(meal_interval_hr, prob = 0.50),
+    Mean    = mean(meal_interval_hr),
+    SD      = sd(meal_interval_hr),
+    Q3      = quantile(meal_interval_hr, prob = 0.75),
+    max     = max(meal_interval_hr)
+  ) %>% 
+  knitr::kable(col.names = c("Min", "Q1", "Median", "Mean", "SD", "Q3", "Max"), digits = 2)
+
+# Histogram
+p1 <- analytic_df %>% 
+  filter(!is.na(meal_interval_hr)) %>% 
+  ggplot(aes(x = meal_interval_hr)) +
+  geom_histogram(bins = 25) +
+  labs(
+    y = "Number of meals", 
+    x = "Meal interval (hours)",
+    title = "Histogram of meal interval"
+  )
+
+# ECDF
+p2 <- analytic_df %>% 
+  filter(!is.na(meal_interval_hr)) %>% 
+  ggplot(aes(x = meal_interval_hr)) +
+  stat_ecdf() +
+  scale_y_continuous(labels = scales::percent) +
+  labs(
+    y = "Cumlative percentage", 
+    x = "Meal interval (hours)",
+    title = "Cumulative distribution of meal interval"
+  )
+
+p1 + p2
+```
+
+### Avocado intake
+
+#### Distribution of avocado intake
+
+* A histogram of avocado intake (grams) per meal/snack is shown below
+  * The distribution of avocado intake per meal was trimodal, with the three largest bars corresponding to:
+    * No avocado (0 grams) -- 70% of all meals
+    * One-half (84 grams) -- 7.4%
+    * One whole avocado (168 grams) -- 20%
+  * The max avocado intake per meal was 504 grams
+
+```{r avocado_histogram}
+
+# Histogram of avocado intake
+analytic_df %>% 
+  ggplot(aes(x = avocado_gram)) +
+  geom_histogram() +
+  labs(
+    x = "Avocado consumption (grams/meal)", 
+    y = "Frequency",
+    title = "Histogram of avocado consumption"
+  )
+
+```
+
+* Given the distribution of avocado, meals/snaks were categorized into the following 3 groups by avocado consumption:
+
+```{r avocado_meal_freq}
+
+# Frequency of meals with avocado 
+# Avocado intake categories
+analytic_df %>% 
+  count(avocado_intake_cat) %>% 
+  mutate(percent = n / sum(n) * 100) %>% 
+  knitr::kable(digits = 1, col.names = c("Avocado intake", "n", "%"))
+
+```
+
+#### Food kcal by meal type and avocado intake
+
+* Mean (SD) food kcal by meal type and avocado intake are shown below:
+  * Food kcal increases with avocado intake for both meals and snacks
+
+```{r food_kcal_by_mealtype_avocado}
+
+tab4_2 <- analytic_df %>%
+  group_by(meal_or_snack, meal_type, avocado_intake_cat) %>%
+  summarise(
+    n    = n(),
+    mean = mean(food_kcal, na.rm = TRUE),
+    sd   = sd(food_kcal,   na.rm = TRUE),
+    .groups = "drop"
+  )
+
+
+tab4_2 %>%  
+  mutate(
+    avocado_label = case_when(
+      avocado_intake_cat == "No avocado at all"        ~ "EO with no avocado", 
+      avocado_intake_cat == "<1 avocado"               ~ "EO with <1 avocado", 
+      avocado_intake_cat == "1 whole avocado or more"  ~ "EO with 1+ avocado"
+    ),
+    mean_sd = paste0(round(mean), " ± ", round(sd))
+  ) %>%
+  select(meal_type, avocado_label, n, mean_sd) %>%
+  pivot_wider(
+    names_from  = avocado_label,
+    values_from = c(n, mean_sd)
+  ) %>%
+  select(
+    `Meal type`               = meal_type,
+    `No avocado:<br> N`           = `n_EO with no avocado`,
+    `No avocado:<br> Mean ± SD`   = `mean_sd_EO with no avocado`,
+    `<1 avocado:<br> N`          = `n_EO with <1 avocado`,
+    `<1 avocado:<br> Mean ± SD`  = `mean_sd_EO with <1 avocado`,
+    `1+ avocado:<br> N`          = `n_EO with 1+ avocado`,
+    `1+ avocado:<br> Mean ± SD`  = `mean_sd_EO with 1+ avocado`
+  ) %>% 
+  knitr::kable()
+
+# Figure
+tab4_2 %>% 
+  ggplot(aes(x = meal_type, y = mean, fill = avocado_intake_cat)) +
+  geom_bar(stat = "identity", position = "dodge", width = 0.7) +
+  scale_y_continuous(limits = c(0, 1000), breaks = 1:5 * 200) +
+  theme(legend.position = "bottom") +
+  labs(x = "", y = "Mean food kcal per meal (kcal)", fill = "") +
+  facet_wrap(~ meal_or_snack, scales = "free_x")
+
+```
+
+#### Food density by meal type and avocado intake
+
+* Mean (SD) food density by meal type and avocado intake are shown below:
+  * Food density decreases with avocado intake for meals
+
+```{r food_density_by_mealtype_avocado}
+
+tab4_2_fd <- analytic_df %>%
+  group_by(meal_or_snack, meal_type, avocado_intake_cat) %>%
+  summarise(
+    n    = n(),
+    mean = mean(food_density, na.rm = TRUE),
+    sd   = sd(food_density,   na.rm = TRUE),
+    .groups = "drop"
+  )
+
+
+tab4_2_fd %>%  
+  mutate(
+    avocado_label = case_when(
+      avocado_intake_cat == "No avocado at all"        ~ "EO with no avocado", 
+      avocado_intake_cat == "<1 avocado"               ~ "EO with <1 avocado", 
+      avocado_intake_cat == "1 whole avocado or more"  ~ "EO with 1+ avocado"
+    ),
+    mean_sd = paste0(round(mean, 2), " ± ", round(sd, 2))
+  ) %>%
+  select(meal_type, avocado_label, n, mean_sd) %>%
+  pivot_wider(
+    names_from  = avocado_label,
+    values_from = c(n, mean_sd)
+  ) %>%
+  select(
+    `Meal type`               = meal_type,
+    `No avocado:<br> N`           = `n_EO with no avocado`,
+    `No avocado:<br> Mean ± SD`   = `mean_sd_EO with no avocado`,
+    `<1 avocado:<br> N`          = `n_EO with <1 avocado`,
+    `<1 avocado:<br> Mean ± SD`  = `mean_sd_EO with <1 avocado`,
+    `1+ avocado:<br> N`          = `n_EO with 1+ avocado`,
+    `1+ avocado:<br> Mean ± SD`  = `mean_sd_EO with 1+ avocado`
+  ) %>% 
+  knitr::kable()
+
+# Figure
+tab4_2_fd %>% 
+  ggplot(aes(x = meal_type, y = mean, fill = avocado_intake_cat)) +
+  geom_bar(stat = "identity", position = "dodge", width = 0.7) +
+  theme(legend.position = "bottom") +
+  labs(x = "", y = "Mean food density (kcal/g)", fill = "") +
+  facet_wrap(~ meal_or_snack, scales = "free_x")
+
+```
+
+#### Prior avocado intake
+
+* Among 3,694 meals/snacks (excluding the first eating occasions of the day), 69% of the meals/snack did not have any avocado intake at the preceding eating occasion
+  * The meal interval appears to increase with greater avocado intake at the preceding eating occasion
+  * The mean energy intake (from food) was lowest when less than one avocado was consumed at the preceding eating occasion
+
+```{r prior_avocado_meal_interval_food_kcal}
+
+# Prior avocado intake and its effect on meal interval and food kcal 
+analytic_df %>% 
+  filter(!is.na(lag_avocado_intake_cat)) %>%
+  group_by(lag_avocado_intake_cat) %>% 
+  summarize(
+    n = n(),
+    pct = n / nrow(.) * 100,
+    mean_meal_interval_hr = mean(meal_interval_hr, na.rm = TRUE),
+    sd_meal_interval_hr   =  sd(meal_interval_hr, na.rm = TRUE),
+    mean_food_kcal        = mean(food_kcal, na.rm = TRUE),
+    sd_food_kcal          =  sd(food_kcal, na.rm = TRUE)
+  ) %>% 
+  mutate(
+    mean_sd_meal_interval = paste0(sprintf("%.2f", mean_meal_interval_hr), " ± ", sprintf("%.2f", sd_meal_interval_hr)),
+    mean_sd_food_kcal     = paste0(sprintf("%.1f", mean_food_kcal), " ± ", sprintf("%.1f", sd_food_kcal))
+  ) %>% 
+  select(lag_avocado_intake_cat, n, pct, starts_with("mean_sd")) %>% 
+  knitr::kable(digits = 2, col.names = c("Prior avocado intake", "n", "%", "Mean meal interval (SD)", "Mean food kcal (SD)"))
+
+```
+
+* When stratified by meal type, the meal interval increased with greater avocado intake at the preceding eating occasion for midday and evening meals, but not for morning meals
+
+```{r prior_avocado_meal_interval}
+
+tab <- analytic_df %>% 
+  filter(!is.na(lag_avocado_intake_cat)) %>%
+  group_by(meal_or_snack, meal_type, lag_avocado_intake_cat) %>% 
+  summarize(
+    n = n(),
+    mean_meal_interval_hr = mean(meal_interval_hr, na.rm = TRUE),
+    mean_food_kcal        = mean(food_kcal, na.rm = TRUE),
+  )
+
+tab %>% 
+  ggplot(aes(x = meal_type, y = mean_meal_interval_hr, fill = lag_avocado_intake_cat)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  facet_wrap(~meal_or_snack, scales = "free") +
+  theme(legend.position = "bottom") +
+  labs(x = "", y = "Mean meal interval (hour)", fill = "Prior avocado intake")
+
+```
+
+* When stratified by meal type, the mean energy content was lowest when less than one avocado was consumed at the preceding eating occasion for all meals (morning, midday, and evening meals)
+  * For snacks, the mean energy content was highest when no avocado was consumed at the preceding eating occasion
+
+```{r prior_avocado_food_kcal}
+
+tab %>% 
+  ggplot(aes(x = meal_type, y = mean_food_kcal, fill = lag_avocado_intake_cat)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  facet_wrap(~meal_or_snack, scales = "free") +
+  theme(legend.position = "bottom") +
+  labs(x = "", y = "Mean energy content (kcal)", fill = "Prior vocado intake")
+
+```
+
+
+## Model
+
+* [**In progress**] To examine the effect of avocado consumption on three outcomes -- meal energy intake (kcal from food), dietary energy density (kcal/g), and mealtime interval (hours between consecutive eating occasions) -- we fitted separate linear mixed effects models for each outcome using the `lme` function from the `nlme` package in R
+
+* Each model accounted for the three-level nested structure of the data, where eating occasions (level 1) were nested within recall days (level 2), which were in turn nested within participants (level 3)
+
+* The same covariance structure was applied across all three models, with an unstructured G matrix at the participant level to capture between-person variability in both baseline outcomes and recall-to-recall changes, and a compound symmetry structure (???) for the R matrix to account for the correlation among meals consumed within the same recall day
+
+* Models for food kcal and food density
+  * log transform or not?
+* Models for meal interval
+
+### Covariates
+
+* [**In progress**] Covariates in the mixed models include: 
+  * Age at baseline
+  * Race
+  * Education level (May be dropped after model results?)
+  * BMI
+  * Residential region (May be dropped after model results?)
+  * Day of the week
+  * Total daily kcal
+  * Meal type
+  * Meal place
+  * Meal frequency
+  * Previous meal (meal type? meal or snack?)
+  * Previous avocado intake
+  * Interactions
+    * Avocao intake (on the same meal) * Meal type
+    * Meal after avocado (yes/no) * Meal type
+  * 3-way interactions?
+
+
