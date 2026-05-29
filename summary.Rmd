@@ -105,9 +105,9 @@ non_beverages <- read_csv("./data/Gram_kcal_new2.csv") %>%
 # idow: 0 = Sunday, 1 = Monday,..., 6 = Saturday 
 # n = 3,901
 intake <- read_csv("./data/HAT_Intake.csv") %>%
-  mutate(day_of_wk = if_else(idow %in% c(0, 6), 0L, 1L),
+  mutate(weekday = if_else(idow %in% c(0, 6), 0L, 1L),
          kcal_per_day = rikcal) %>%
-  select(pid, visitcode, day_of_wk, kcal_per_day, idow)
+  select(pid, visitcode, weekday, kcal_per_day, idow)
 
 
 # Identify meals with avocado ---------------------------------------------
@@ -872,36 +872,47 @@ tab %>%
 ```
 
 
-## Model
+## Linear Mixed Models
 
-* [**In progress**] To examine the effect of avocado consumption on three outcomes -- meal energy intake (kcal from food), dietary energy density (kcal/g), and mealtime interval (hours between consecutive eating occasions) -- we fitted separate linear mixed effects models for each outcome using the `lme` function from the `nlme` package in R
+### Descriptions of the models
+
+* To examine the effect of avocado consumption on three outcomes -- meal energy intake (kcal from food), dietary energy density (kcal/g), and mealtime interval (hours between consecutive eating occasions) -- we fitted separate linear mixed effects models for each outcome using the `lme` function from the `nlme` package in R
 
 * Each model accounted for the three-level nested structure of the data, where eating occasions (level 1) were nested within recall days (level 2), which were in turn nested within participants (level 3)
 
-* The same covariance structure was applied across all three models, with an unstructured G matrix at the participant level to capture between-person variability in both baseline outcomes and recall-to-recall changes, and a compound symmetry structure (???) for the R matrix to account for the correlation among meals consumed within the same recall day
-
-* Models for food kcal and food density
-  * log transform or not?
-* Models for meal interval
+* The same covariance structure was applied across all three models, with an unstructured G matrix at the participant level to capture between-person variability in both baseline outcomes and recall-to-recall changes, and a continuous autoregressive structure for the R matrix to account for the correlation among meals consumed within the same recall day. This approach recognizes that two meals eaten close together in time are more likely to influence each other than two meals eaten far apart
 
 ### Covariates
 
-* [**In progress**] Covariates in the mixed models include: 
-  * Age at baseline
-  * Race
-  * Education level (May be dropped after model results?)
-  * BMI
-  * Residential region (May be dropped after model results?)
-  * Day of the week
-  * Total daily kcal
-  * Meal type
-  * Meal place
-  * Meal frequency
-  * Previous meal (meal type? meal or snack?)
-  * Previous avocado intake
-  * Interactions
-    * Avocao intake (on the same meal) * Meal type
-    * Meal after avocado (yes/no) * Meal type
-  * 3-way interactions?
+* All models included the following covariates: 
+  * Age at baseline (as continuous)
+  * Sex (female as reference)
+  * Race (Caucasian as reference)
+  * BMI (as continuous)
+  * Residential region (East/West coast, East coast as reference)
+  * Day of the week (weekdays or weekends, weekday as reference)
+  * Total daily kcal (as continuous)
+  * Meal type (evening meal as reference)
+  * Meal environment (4 levels as shown above; Home/Friend's home as reference)
+  * Meal frequency (as continuous)
+  
+### Outcomes
+
+* Three outcomes were examined: meal energy intake (kcal), dietary energy density (kcal/g), and mealtime interval (hours)
+  * Given the severe right-skewed distribution of meal energy intake, this outcome was log-transformed prior to analysis
+  * No transformation was applied to energy density or mealtime interval
+  
+* To examine the effect of avocado consumption on meal energy intake and dietary energy density, the models additionally included:
+  * Avocado consumption at the same eating occasion as a categorical variable (no avocado as the reference category),
+  * along with its interaction with meal type where statistically significant
+
+* For the subsequent meal models:
+  * Avocado intake at the preceding eating occasion was included as the main exposure,
+  * again with its interaction with meal type retained where statistically significant
+
+* For each outcome, estimated marginal means (EMMs) with 95% confidence intervals were derived from the fitted models using the `emmeans` package in R, averaging over all other covariates in the model at their observed distributions
+  * For meal energy intake, where a log transformation was applied prior to analysis, EMMs were back-transformed to the original scale for interpretability and are therefore reported as geometric means with 95% confidence intervals
+
+* All analyses were conducted in R version 4.5.3.
 
 
