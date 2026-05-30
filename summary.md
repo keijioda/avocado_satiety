@@ -683,7 +683,7 @@ Waist circumference, cm (mean (SD))
   - BMI (as continuous)
   - Residential region (East/West coast, East coast as reference)
   - Day of the week (weekdays or weekends, weekday as reference)
-  - Total daily kcal (as continuous)
+  - Total daily kcal (as continuous, per 100 kcal)
   - Meal type (evening meal as reference)
   - Meal environment (4 levels as shown above; Home/Friend’s home as
     reference)
@@ -716,3 +716,2307 @@ Waist circumference, cm (mean (SD))
     interpretability and are therefore reported as geometric means with
     95% confidence intervals
 - All analyses were conducted in R version 4.5.3.
+
+## Model results
+
+### Effect of avocado consumption on meal energy intake
+
+- The interaction between meal type and avocado intake was highly
+  significant (p \<.0001),
+  - suggesting that the effects of avocado intake on meal energy content
+    differed across meal types
+- Among the covariates:
+  - Age, sex, race/ethinicity, BMI, region, and day of the week were not
+    statistically significant
+  - Meal environment, meal frequency, daily energy intake were all
+    highly significant (p \<.0001)
+    - Meal environment: Significantly higher kcal for
+      “Deli/Take-out/Restaurant” and “Daycare/Party/Travelling/Other”
+    - Meal frequency: Higher the frequency, lower the energy intake
+    - Daily energy intake: Higher the daily kcal, higher the meal kcal
+- The table below presents estimated marginal means of meal energy
+  intake by meal type and avocado intake category,
+  - adjusted for all covariates in the model and
+  - back-transformed to the original scale (kcal)
+- The last two columns show Tukey-adjusted p-values comparing against
+  the no-avocado meals and against the \<1 avocado meals, respectively
+  - Across all meal types, meal energy content increased with avocado
+    intake
+  - Most pairwise comparisons within the same meal type were
+    significant, with two exceptions:
+    - \<1 avocado vs 1+ avocado comparison in the morning meal
+    - \<1 avocado vs 1+ avocado comparison in the late-night snack
+
+<table class="table" style="color: black; margin-left: auto; margin-right: auto;">
+
+<thead>
+
+<tr>
+
+<th style="text-align:left;">
+
+Meal type
+</th>
+
+<th style="text-align:left;">
+
+Avocado intake
+</th>
+
+<th style="text-align:right;">
+
+Adjusted mean
+</th>
+
+<th style="text-align:right;">
+
+Lower 95% CL
+</th>
+
+<th style="text-align:right;">
+
+Upper 95% CL
+</th>
+
+<th style="text-align:right;">
+
+p-val: vs No avocado
+</th>
+
+<th style="text-align:right;">
+
+p-val: vs \<1 avocado
+</th>
+
+</tr>
+
+</thead>
+
+<tbody>
+
+<tr>
+
+<td style="text-align:left;vertical-align: top !important;" rowspan="3">
+
+Morning meal
+</td>
+
+<td style="text-align:left;">
+
+No avocado at all
+</td>
+
+<td style="text-align:right;">
+
+303.6
+</td>
+
+<td style="text-align:right;">
+
+291.1
+</td>
+
+<td style="text-align:right;">
+
+316.7
+</td>
+
+<td style="text-align:right;">
+
+</td>
+
+<td style="text-align:right;">
+
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+\<1 avocado
+</td>
+
+<td style="text-align:right;">
+
+445.8
+</td>
+
+<td style="text-align:right;">
+
+405.0
+</td>
+
+<td style="text-align:right;">
+
+490.7
+</td>
+
+<td style="text-align:right;">
+
+\<0.0001
+</td>
+
+<td style="text-align:right;">
+
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+1 whole avocado or more
+</td>
+
+<td style="text-align:right;">
+
+503.8
+</td>
+
+<td style="text-align:right;">
+
+471.0
+</td>
+
+<td style="text-align:right;">
+
+538.8
+</td>
+
+<td style="text-align:right;">
+
+\<0.0001
+</td>
+
+<td style="text-align:right;">
+
+0.0988
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;vertical-align: top !important;" rowspan="3">
+
+Midday meal
+</td>
+
+<td style="text-align:left;">
+
+No avocado at all
+</td>
+
+<td style="text-align:right;">
+
+441.8
+</td>
+
+<td style="text-align:right;">
+
+422.9
+</td>
+
+<td style="text-align:right;">
+
+461.5
+</td>
+
+<td style="text-align:right;">
+
+</td>
+
+<td style="text-align:right;">
+
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+\<1 avocado
+</td>
+
+<td style="text-align:right;">
+
+544.7
+</td>
+
+<td style="text-align:right;">
+
+496.7
+</td>
+
+<td style="text-align:right;">
+
+597.4
+</td>
+
+<td style="text-align:right;">
+
+0.0002
+</td>
+
+<td style="text-align:right;">
+
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+1 whole avocado or more
+</td>
+
+<td style="text-align:right;">
+
+655.9
+</td>
+
+<td style="text-align:right;">
+
+612.8
+</td>
+
+<td style="text-align:right;">
+
+701.9
+</td>
+
+<td style="text-align:right;">
+
+\<0.0001
+</td>
+
+<td style="text-align:right;">
+
+0.0040
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;vertical-align: top !important;" rowspan="3">
+
+Evening meal
+</td>
+
+<td style="text-align:left;">
+
+No avocado at all
+</td>
+
+<td style="text-align:right;">
+
+524.3
+</td>
+
+<td style="text-align:right;">
+
+503.4
+</td>
+
+<td style="text-align:right;">
+
+546.1
+</td>
+
+<td style="text-align:right;">
+
+</td>
+
+<td style="text-align:right;">
+
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+\<1 avocado
+</td>
+
+<td style="text-align:right;">
+
+605.0
+</td>
+
+<td style="text-align:right;">
+
+550.4
+</td>
+
+<td style="text-align:right;">
+
+664.9
+</td>
+
+<td style="text-align:right;">
+
+0.0165
+</td>
+
+<td style="text-align:right;">
+
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+1 whole avocado or more
+</td>
+
+<td style="text-align:right;">
+
+739.8
+</td>
+
+<td style="text-align:right;">
+
+687.4
+</td>
+
+<td style="text-align:right;">
+
+796.2
+</td>
+
+<td style="text-align:right;">
+
+\<0.0001
+</td>
+
+<td style="text-align:right;">
+
+0.0026
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;vertical-align: top !important;" rowspan="3">
+
+Morning snack
+</td>
+
+<td style="text-align:left;">
+
+No avocado at all
+</td>
+
+<td style="text-align:right;">
+
+166.2
+</td>
+
+<td style="text-align:right;">
+
+155.0
+</td>
+
+<td style="text-align:right;">
+
+178.1
+</td>
+
+<td style="text-align:right;">
+
+</td>
+
+<td style="text-align:right;">
+
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+\<1 avocado
+</td>
+
+<td style="text-align:right;">
+
+243.8
+</td>
+
+<td style="text-align:right;">
+
+189.4
+</td>
+
+<td style="text-align:right;">
+
+313.8
+</td>
+
+<td style="text-align:right;">
+
+0.0107
+</td>
+
+<td style="text-align:right;">
+
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+1 whole avocado or more
+</td>
+
+<td style="text-align:right;">
+
+391.6
+</td>
+
+<td style="text-align:right;">
+
+318.9
+</td>
+
+<td style="text-align:right;">
+
+480.9
+</td>
+
+<td style="text-align:right;">
+
+\<0.0001
+</td>
+
+<td style="text-align:right;">
+
+0.0114
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;vertical-align: top !important;" rowspan="3">
+
+Midday snack
+</td>
+
+<td style="text-align:left;">
+
+No avocado at all
+</td>
+
+<td style="text-align:right;">
+
+179.8
+</td>
+
+<td style="text-align:right;">
+
+170.7
+</td>
+
+<td style="text-align:right;">
+
+189.4
+</td>
+
+<td style="text-align:right;">
+
+</td>
+
+<td style="text-align:right;">
+
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+\<1 avocado
+</td>
+
+<td style="text-align:right;">
+
+252.2
+</td>
+
+<td style="text-align:right;">
+
+202.3
+</td>
+
+<td style="text-align:right;">
+
+314.4
+</td>
+
+<td style="text-align:right;">
+
+0.0093
+</td>
+
+<td style="text-align:right;">
+
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+1 whole avocado or more
+</td>
+
+<td style="text-align:right;">
+
+382.9
+</td>
+
+<td style="text-align:right;">
+
+336.0
+</td>
+
+<td style="text-align:right;">
+
+436.4
+</td>
+
+<td style="text-align:right;">
+
+\<0.0001
+</td>
+
+<td style="text-align:right;">
+
+0.0039
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;vertical-align: top !important;" rowspan="3">
+
+Late night snack
+</td>
+
+<td style="text-align:left;">
+
+No avocado at all
+</td>
+
+<td style="text-align:right;">
+
+197.3
+</td>
+
+<td style="text-align:right;">
+
+187.7
+</td>
+
+<td style="text-align:right;">
+
+207.3
+</td>
+
+<td style="text-align:right;">
+
+</td>
+
+<td style="text-align:right;">
+
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+\<1 avocado
+</td>
+
+<td style="text-align:right;">
+
+307.1
+</td>
+
+<td style="text-align:right;">
+
+245.3
+</td>
+
+<td style="text-align:right;">
+
+384.6
+</td>
+
+<td style="text-align:right;">
+
+0.0005
+</td>
+
+<td style="text-align:right;">
+
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+1 whole avocado or more
+</td>
+
+<td style="text-align:right;">
+
+346.7
+</td>
+
+<td style="text-align:right;">
+
+306.6
+</td>
+
+<td style="text-align:right;">
+
+392.1
+</td>
+
+<td style="text-align:right;">
+
+\<0.0001
+</td>
+
+<td style="text-align:right;">
+
+0.6211
+</td>
+
+</tr>
+
+</tbody>
+
+</table>
+
+![](summary_files/figure-gfm/lmm_avocado_log_kcal_plot-1.png)<!-- -->
+
+### Effect of avocado consumption on energy density
+
+- The interaction between meal type and avocado intake was highly
+  significant (p \<.0001),
+
+  - suggesting that the effects of avocado intake on energy density
+    differed across meal types
+
+- Among the covariates:
+
+  - Age, sex, BMI, day of the week, and daily were not statistically
+    significant
+  - The following covariates were significant:
+    - Race/ethnicity (p = 0.038, lower density among Asians)
+    - Region (p = 0.021, higher density in the west coast)
+    - Meal environment (p = 0.004, higher density in
+      “Daycare/Party/Travelling/Other”)
+    - Meal frequency (p = 0.002, higher the frequency, lower the
+      density)
+
+- The table below presents estimated marginal means of energy density by
+  meal type and avocado intake category, adjusted for all covariates in
+  the model
+
+- Overall, energy density tended to be highest in meals that did not
+  include any avocado
+
+  - Among snacks, energy density was significantly higher in snacks
+    containing no avocado compared to snacks containing \<1 avocado or
+    1+ avocados, across all snack periods (morning, midday, and
+    late-night). The difference between the latter two was not
+    statistically significant.
+  - Among meals, significant differences were found in three
+    comparisons:
+    - no avocado vs \<1 avocado in the morning meal
+    - no avocado vs 1+ avocado in the morning meal
+    - \<1 avocado vs 1+ avocado in the midday meal
+
+<table class="table" style="color: black; margin-left: auto; margin-right: auto;">
+
+<thead>
+
+<tr>
+
+<th style="text-align:left;">
+
+Meal type
+</th>
+
+<th style="text-align:left;">
+
+Avocado intake
+</th>
+
+<th style="text-align:right;">
+
+Adjusted mean
+</th>
+
+<th style="text-align:right;">
+
+Lower 95% CL
+</th>
+
+<th style="text-align:right;">
+
+Upper 95% CL
+</th>
+
+<th style="text-align:right;">
+
+p-val: vs No avocado
+</th>
+
+<th style="text-align:right;">
+
+p-val: vs \<1 avocado
+</th>
+
+</tr>
+
+</thead>
+
+<tbody>
+
+<tr>
+
+<td style="text-align:left;vertical-align: top !important;" rowspan="3">
+
+Morning meal
+</td>
+
+<td style="text-align:left;">
+
+No avocado at all
+</td>
+
+<td style="text-align:right;">
+
+2.13
+</td>
+
+<td style="text-align:right;">
+
+2.05
+</td>
+
+<td style="text-align:right;">
+
+2.22
+</td>
+
+<td style="text-align:right;">
+
+</td>
+
+<td style="text-align:right;">
+
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+\<1 avocado
+</td>
+
+<td style="text-align:right;">
+
+1.86
+</td>
+
+<td style="text-align:right;">
+
+1.66
+</td>
+
+<td style="text-align:right;">
+
+2.05
+</td>
+
+<td style="text-align:right;">
+
+0.0269
+</td>
+
+<td style="text-align:right;">
+
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+1 whole avocado or more
+</td>
+
+<td style="text-align:right;">
+
+1.69
+</td>
+
+<td style="text-align:right;">
+
+1.56
+</td>
+
+<td style="text-align:right;">
+
+1.83
+</td>
+
+<td style="text-align:right;">
+
+\<0.0001
+</td>
+
+<td style="text-align:right;">
+
+0.3641
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;vertical-align: top !important;" rowspan="3">
+
+Midday meal
+</td>
+
+<td style="text-align:left;">
+
+No avocado at all
+</td>
+
+<td style="text-align:right;">
+
+1.90
+</td>
+
+<td style="text-align:right;">
+
+1.82
+</td>
+
+<td style="text-align:right;">
+
+1.99
+</td>
+
+<td style="text-align:right;">
+
+</td>
+
+<td style="text-align:right;">
+
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+\<1 avocado
+</td>
+
+<td style="text-align:right;">
+
+1.71
+</td>
+
+<td style="text-align:right;">
+
+1.53
+</td>
+
+<td style="text-align:right;">
+
+1.90
+</td>
+
+<td style="text-align:right;">
+
+0.1596
+</td>
+
+<td style="text-align:right;">
+
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+1 whole avocado or more
+</td>
+
+<td style="text-align:right;">
+
+1.62
+</td>
+
+<td style="text-align:right;">
+
+1.49
+</td>
+
+<td style="text-align:right;">
+
+1.76
+</td>
+
+<td style="text-align:right;">
+
+0.0019
+</td>
+
+<td style="text-align:right;">
+
+0.7238
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;vertical-align: top !important;" rowspan="3">
+
+Evening meal
+</td>
+
+<td style="text-align:left;">
+
+No avocado at all
+</td>
+
+<td style="text-align:right;">
+
+1.78
+</td>
+
+<td style="text-align:right;">
+
+1.70
+</td>
+
+<td style="text-align:right;">
+
+1.86
+</td>
+
+<td style="text-align:right;">
+
+</td>
+
+<td style="text-align:right;">
+
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+\<1 avocado
+</td>
+
+<td style="text-align:right;">
+
+1.65
+</td>
+
+<td style="text-align:right;">
+
+1.46
+</td>
+
+<td style="text-align:right;">
+
+1.83
+</td>
+
+<td style="text-align:right;">
+
+0.4003
+</td>
+
+<td style="text-align:right;">
+
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+1 whole avocado or more
+</td>
+
+<td style="text-align:right;">
+
+1.61
+</td>
+
+<td style="text-align:right;">
+
+1.46
+</td>
+
+<td style="text-align:right;">
+
+1.76
+</td>
+
+<td style="text-align:right;">
+
+0.1179
+</td>
+
+<td style="text-align:right;">
+
+0.9596
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;vertical-align: top !important;" rowspan="3">
+
+Morning snack
+</td>
+
+<td style="text-align:left;">
+
+No avocado at all
+</td>
+
+<td style="text-align:right;">
+
+2.67
+</td>
+
+<td style="text-align:right;">
+
+2.53
+</td>
+
+<td style="text-align:right;">
+
+2.81
+</td>
+
+<td style="text-align:right;">
+
+</td>
+
+<td style="text-align:right;">
+
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+\<1 avocado
+</td>
+
+<td style="text-align:right;">
+
+1.54
+</td>
+
+<td style="text-align:right;">
+
+1.03
+</td>
+
+<td style="text-align:right;">
+
+2.04
+</td>
+
+<td style="text-align:right;">
+
+0.0001
+</td>
+
+<td style="text-align:right;">
+
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+1 whole avocado or more
+</td>
+
+<td style="text-align:right;">
+
+1.77
+</td>
+
+<td style="text-align:right;">
+
+1.35
+</td>
+
+<td style="text-align:right;">
+
+2.18
+</td>
+
+<td style="text-align:right;">
+
+0.0001
+</td>
+
+<td style="text-align:right;">
+
+0.7660
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;vertical-align: top !important;" rowspan="3">
+
+Midday snack
+</td>
+
+<td style="text-align:left;">
+
+No avocado at all
+</td>
+
+<td style="text-align:right;">
+
+3.27
+</td>
+
+<td style="text-align:right;">
+
+3.17
+</td>
+
+<td style="text-align:right;">
+
+3.38
+</td>
+
+<td style="text-align:right;">
+
+</td>
+
+<td style="text-align:right;">
+
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+\<1 avocado
+</td>
+
+<td style="text-align:right;">
+
+1.82
+</td>
+
+<td style="text-align:right;">
+
+1.37
+</td>
+
+<td style="text-align:right;">
+
+2.26
+</td>
+
+<td style="text-align:right;">
+
+\<0.0001
+</td>
+
+<td style="text-align:right;">
+
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+1 whole avocado or more
+</td>
+
+<td style="text-align:right;">
+
+1.72
+</td>
+
+<td style="text-align:right;">
+
+1.46
+</td>
+
+<td style="text-align:right;">
+
+1.98
+</td>
+
+<td style="text-align:right;">
+
+\<0.0001
+</td>
+
+<td style="text-align:right;">
+
+0.9256
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;vertical-align: top !important;" rowspan="3">
+
+Late night snack
+</td>
+
+<td style="text-align:left;">
+
+No avocado at all
+</td>
+
+<td style="text-align:right;">
+
+3.29
+</td>
+
+<td style="text-align:right;">
+
+3.19
+</td>
+
+<td style="text-align:right;">
+
+3.39
+</td>
+
+<td style="text-align:right;">
+
+</td>
+
+<td style="text-align:right;">
+
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+\<1 avocado
+</td>
+
+<td style="text-align:right;">
+
+1.67
+</td>
+
+<td style="text-align:right;">
+
+1.22
+</td>
+
+<td style="text-align:right;">
+
+2.12
+</td>
+
+<td style="text-align:right;">
+
+\<0.0001
+</td>
+
+<td style="text-align:right;">
+
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+1 whole avocado or more
+</td>
+
+<td style="text-align:right;">
+
+1.69
+</td>
+
+<td style="text-align:right;">
+
+1.45
+</td>
+
+<td style="text-align:right;">
+
+1.94
+</td>
+
+<td style="text-align:right;">
+
+\<0.0001
+</td>
+
+<td style="text-align:right;">
+
+0.9946
+</td>
+
+</tr>
+
+</tbody>
+
+</table>
+
+![](summary_files/figure-gfm/lmm_avocado_energy_density_plot-1.png)<!-- -->
+
+### Effect of preceding avocado consumption on meal energy intake
+
+- The interaction between meal type and preceding avocado intake was
+  statistically significant (p = 0.010),
+  - suggesting that the effects of preceding avocado intake on meal
+    energy content differed across meal types
+- Among the covariates:
+  - Age, sex, race/ethinicity, BMI, region, and day of the week were not
+    statistically significant
+  - Meal environment, meal frequency, daily energy intake were all
+    highly significant (p \<.0001)
+    - Meal environment: Significantly higher kcal for
+      “Deli/Take-out/Restaurant”
+    - Meal frequency: Higher the frequency, lower the energy intake
+    - Daily energy intake: Higher the daily kcal, higher the meal kcal
+- The table below presents estimated marginal means of meal energy
+  intake by meal type and preceding avocado intake category,
+  - adjusted for all covariates in the model and
+  - back-transformed to the original scale (kcal)
+- For midday meals, the absence of avocado in the preceding eating
+  occasion was associated with significantly higher energy content in
+  the subsequent meal, compared to when any amount of avocado was
+  consumed
+  - No significant differences were found for the morning or evening
+    meals
+- For morning snacks, a similar pattern was observed – the absence of
+  avocado in the preceding eating occasion was associated with
+  significantly higher energy content in the subsequent eating occasion
+  - For midday snacks, energy content was significantly lower when 1+
+    avocado was consumed in the preceding eating occasion compared to
+    when none or \<1 avocado was consumed
+
+<table class="table" style="color: black; margin-left: auto; margin-right: auto;">
+
+<thead>
+
+<tr>
+
+<th style="text-align:left;">
+
+Meal type
+</th>
+
+<th style="text-align:left;">
+
+Preceding avocado intake
+</th>
+
+<th style="text-align:right;">
+
+Adjusted mean
+</th>
+
+<th style="text-align:right;">
+
+Lower 95% CL
+</th>
+
+<th style="text-align:right;">
+
+Upper 95% CL
+</th>
+
+<th style="text-align:right;">
+
+p-val: vs No avocado
+</th>
+
+<th style="text-align:right;">
+
+p-val: vs \<1 avocado
+</th>
+
+</tr>
+
+</thead>
+
+<tbody>
+
+<tr>
+
+<td style="text-align:left;vertical-align: top !important;" rowspan="3">
+
+Morning meal
+</td>
+
+<td style="text-align:left;">
+
+No avocado at all
+</td>
+
+<td style="text-align:right;">
+
+464.7
+</td>
+
+<td style="text-align:right;">
+
+400.6
+</td>
+
+<td style="text-align:right;">
+
+539.1
+</td>
+
+<td style="text-align:right;">
+
+</td>
+
+<td style="text-align:right;">
+
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+\<1 avocado
+</td>
+
+<td style="text-align:right;">
+
+508.0
+</td>
+
+<td style="text-align:right;">
+
+349.1
+</td>
+
+<td style="text-align:right;">
+
+739.3
+</td>
+
+<td style="text-align:right;">
+
+0.9010
+</td>
+
+<td style="text-align:right;">
+
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+1 whole avocado or more
+</td>
+
+<td style="text-align:right;">
+
+354.7
+</td>
+
+<td style="text-align:right;">
+
+263.9
+</td>
+
+<td style="text-align:right;">
+
+476.9
+</td>
+
+<td style="text-align:right;">
+
+0.2442
+</td>
+
+<td style="text-align:right;">
+
+0.3019
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;vertical-align: top !important;" rowspan="3">
+
+Midday meal
+</td>
+
+<td style="text-align:left;">
+
+No avocado at all
+</td>
+
+<td style="text-align:right;">
+
+532.3
+</td>
+
+<td style="text-align:right;">
+
+508.0
+</td>
+
+<td style="text-align:right;">
+
+557.9
+</td>
+
+<td style="text-align:right;">
+
+</td>
+
+<td style="text-align:right;">
+
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+\<1 avocado
+</td>
+
+<td style="text-align:right;">
+
+429.5
+</td>
+
+<td style="text-align:right;">
+
+380.9
+</td>
+
+<td style="text-align:right;">
+
+484.2
+</td>
+
+<td style="text-align:right;">
+
+0.0029
+</td>
+
+<td style="text-align:right;">
+
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+1 whole avocado or more
+</td>
+
+<td style="text-align:right;">
+
+435.9
+</td>
+
+<td style="text-align:right;">
+
+400.9
+</td>
+
+<td style="text-align:right;">
+
+474.0
+</td>
+
+<td style="text-align:right;">
+
+0.0001
+</td>
+
+<td style="text-align:right;">
+
+0.9777
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;vertical-align: top !important;" rowspan="3">
+
+Evening meal
+</td>
+
+<td style="text-align:left;">
+
+No avocado at all
+</td>
+
+<td style="text-align:right;">
+
+571.5
+</td>
+
+<td style="text-align:right;">
+
+547.8
+</td>
+
+<td style="text-align:right;">
+
+596.2
+</td>
+
+<td style="text-align:right;">
+
+</td>
+
+<td style="text-align:right;">
+
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+\<1 avocado
+</td>
+
+<td style="text-align:right;">
+
+556.3
+</td>
+
+<td style="text-align:right;">
+
+496.2
+</td>
+
+<td style="text-align:right;">
+
+623.7
+</td>
+
+<td style="text-align:right;">
+
+0.8999
+</td>
+
+<td style="text-align:right;">
+
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+1 whole avocado or more
+</td>
+
+<td style="text-align:right;">
+
+540.3
+</td>
+
+<td style="text-align:right;">
+
+499.1
+</td>
+
+<td style="text-align:right;">
+
+584.9
+</td>
+
+<td style="text-align:right;">
+
+0.4251
+</td>
+
+<td style="text-align:right;">
+
+0.9088
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;vertical-align: top !important;" rowspan="3">
+
+Morning snack
+</td>
+
+<td style="text-align:left;">
+
+No avocado at all
+</td>
+
+<td style="text-align:right;">
+
+210.6
+</td>
+
+<td style="text-align:right;">
+
+192.1
+</td>
+
+<td style="text-align:right;">
+
+230.8
+</td>
+
+<td style="text-align:right;">
+
+</td>
+
+<td style="text-align:right;">
+
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+\<1 avocado
+</td>
+
+<td style="text-align:right;">
+
+146.9
+</td>
+
+<td style="text-align:right;">
+
+119.1
+</td>
+
+<td style="text-align:right;">
+
+181.2
+</td>
+
+<td style="text-align:right;">
+
+0.0053
+</td>
+
+<td style="text-align:right;">
+
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+1 whole avocado or more
+</td>
+
+<td style="text-align:right;">
+
+151.7
+</td>
+
+<td style="text-align:right;">
+
+128.3
+</td>
+
+<td style="text-align:right;">
+
+179.4
+</td>
+
+<td style="text-align:right;">
+
+0.0020
+</td>
+
+<td style="text-align:right;">
+
+0.9689
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;vertical-align: top !important;" rowspan="3">
+
+Midday snack
+</td>
+
+<td style="text-align:left;">
+
+No avocado at all
+</td>
+
+<td style="text-align:right;">
+
+212.6
+</td>
+
+<td style="text-align:right;">
+
+199.5
+</td>
+
+<td style="text-align:right;">
+
+226.5
+</td>
+
+<td style="text-align:right;">
+
+</td>
+
+<td style="text-align:right;">
+
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+\<1 avocado
+</td>
+
+<td style="text-align:right;">
+
+210.9
+</td>
+
+<td style="text-align:right;">
+
+183.5
+</td>
+
+<td style="text-align:right;">
+
+242.3
+</td>
+
+<td style="text-align:right;">
+
+0.9941
+</td>
+
+<td style="text-align:right;">
+
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+1 whole avocado or more
+</td>
+
+<td style="text-align:right;">
+
+165.2
+</td>
+
+<td style="text-align:right;">
+
+149.4
+</td>
+
+<td style="text-align:right;">
+
+182.6
+</td>
+
+<td style="text-align:right;">
+
+0.0001
+</td>
+
+<td style="text-align:right;">
+
+0.0136
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;vertical-align: top !important;" rowspan="3">
+
+Late night snack
+</td>
+
+<td style="text-align:left;">
+
+No avocado at all
+</td>
+
+<td style="text-align:right;">
+
+221.4
+</td>
+
+<td style="text-align:right;">
+
+209.4
+</td>
+
+<td style="text-align:right;">
+
+234.2
+</td>
+
+<td style="text-align:right;">
+
+</td>
+
+<td style="text-align:right;">
+
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+\<1 avocado
+</td>
+
+<td style="text-align:right;">
+
+197.7
+</td>
+
+<td style="text-align:right;">
+
+171.0
+</td>
+
+<td style="text-align:right;">
+
+228.6
+</td>
+
+<td style="text-align:right;">
+
+0.3217
+</td>
+
+<td style="text-align:right;">
+
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+1 whole avocado or more
+</td>
+
+<td style="text-align:right;">
+
+197.0
+</td>
+
+<td style="text-align:right;">
+
+175.2
+</td>
+
+<td style="text-align:right;">
+
+221.5
+</td>
+
+<td style="text-align:right;">
+
+0.1766
+</td>
+
+<td style="text-align:right;">
+
+0.9991
+</td>
+
+</tr>
+
+</tbody>
+
+</table>
+
+![](summary_files/figure-gfm/lmm_lag_avocado_log_kcal_plot-1.png)<!-- -->
+
+### Effect of preceding avocado consumption on energy density
+
+- The interaction between meal type and preceding avocado intake was not
+  significant (p = 0.09),
+
+- Among the covariates:
+
+  - Age, sex, race/ethinicity, BMI, region, day of the week, and meal
+    frequency were not statistically significant
+  - Meal environment (p = 0.0002) and daily energy intake (p \<.0001)
+    were highly significant
+    - Meal environment: Significantly higher density for
+      “Daycare/Party/Travelling/Other”
+    - Daily energy intake: Energy density was positively associated with
+      daily energy intake
+
+- The table below presents estimated marginal means of energy density by
+  preceding avocado intake, adjusted for all covariates in the model
+
+  - Energy density tended to increase with greater avocado consumption,
+    with a significant difference observed between meals containing no
+    avocado and meals containing 1+ avocados in the preceding eating
+    occasion (p = 0.012).
+
+<table class="table" style="color: black; margin-left: auto; margin-right: auto;">
+
+<thead>
+
+<tr>
+
+<th style="text-align:left;">
+
+Preceding avocado intake
+</th>
+
+<th style="text-align:right;">
+
+Adjusted mean
+</th>
+
+<th style="text-align:right;">
+
+Lower 95% CL
+</th>
+
+<th style="text-align:right;">
+
+Upper 95% CL
+</th>
+
+<th style="text-align:right;">
+
+p-val: vs No avocado
+</th>
+
+<th style="text-align:right;">
+
+p-val: vs \<1 avocado
+</th>
+
+</tr>
+
+</thead>
+
+<tbody>
+
+<tr>
+
+<td style="text-align:left;">
+
+No avocado at all
+</td>
+
+<td style="text-align:right;">
+
+2.19
+</td>
+
+<td style="text-align:right;">
+
+2.14
+</td>
+
+<td style="text-align:right;">
+
+2.24
+</td>
+
+<td style="text-align:right;">
+
+</td>
+
+<td style="text-align:right;">
+
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+\<1 avocado
+</td>
+
+<td style="text-align:right;">
+
+2.32
+</td>
+
+<td style="text-align:right;">
+
+2.19
+</td>
+
+<td style="text-align:right;">
+
+2.45
+</td>
+
+<td style="text-align:right;">
+
+0.1289
+</td>
+
+<td style="text-align:right;">
+
+</td>
+
+</tr>
+
+<tr>
+
+<td style="text-align:left;">
+
+1 whole avocado or more
+</td>
+
+<td style="text-align:right;">
+
+2.34
+</td>
+
+<td style="text-align:right;">
+
+2.25
+</td>
+
+<td style="text-align:right;">
+
+2.43
+</td>
+
+<td style="text-align:right;">
+
+0.0118
+</td>
+
+<td style="text-align:right;">
+
+0.9730
+</td>
+
+</tr>
+
+</tbody>
+
+</table>
+
+### Effect of preceding avocado consumption on mealtime interval
+
+- \[**In progress**\]

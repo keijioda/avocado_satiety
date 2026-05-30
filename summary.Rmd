@@ -12,15 +12,21 @@ knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
 Sys.setlocale("LC_CTYPE", "English_United States.utf8")
 
 # Required packages
-pacs <- c("tidyverse", "readxl", "janitor", "hms", "tableone", "kableExtra", "ggridges", "patchwork")
-sapply(pacs, require, character.only = TRUE)
+pacs <- c(
+  "tidyverse", 
+  "readxl", 
+  "janitor", 
+  "hms", 
+  "tableone", 
+  "kableExtra",
+  "ggridges", 
+  "patchwork",
+  "nlme",
+  "emmeans"
+)
 
-# Function to search variables
-search_var <- function(df, pattern, ...) {
-  loc <- grep(pattern, names(df), ...)
-  if (length(loc) == 0) warning("There are no such variables")
-  else return(data.frame(loc = loc, varname = names(df)[loc]))
-}
+sapply(pacs, require, character.only = TRUE)
+source("functions.R")
 
 ```
 
@@ -891,7 +897,7 @@ tab %>%
   * BMI (as continuous)
   * Residential region (East/West coast, East coast as reference)
   * Day of the week (weekdays or weekends, weekday as reference)
-  * Total daily kcal (as continuous)
+  * Total daily kcal (as continuous, per 100 kcal)
   * Meal type (evening meal as reference)
   * Meal environment (4 levels as shown above; Home/Friend's home as reference)
   * Meal frequency (as continuous)
@@ -915,4 +921,396 @@ tab %>%
 
 * All analyses were conducted in R version 4.5.3.
 
+## Model results
 
+### Effect of avocado consumption on meal energy intake
+
+* The interaction between meal type and avocado intake was highly significant (p <.0001),
+  * suggesting that the effects of avocado intake on meal energy content differed across meal types
+
+* Among the covariates: 
+  * Age, sex, race/ethinicity, BMI, region, and day of the week were not statistically significant
+  * Meal environment, meal frequency, daily energy intake were all highly significant (p <.0001)
+    * Meal environment: Significantly higher kcal for "Deli/Take-out/Restaurant" and "Daycare/Party/Travelling/Other"
+    * Meal frequency: Higher the frequency, lower the energy intake
+    * Daily energy intake: Higher the daily kcal, higher the meal kcal
+
+* The table below presents estimated marginal means of meal energy intake by meal type and avocado intake category, 
+  * adjusted for all covariates in the model and 
+  * back-transformed to the original scale (kcal)
+  
+* The last two columns show Tukey-adjusted p-values comparing against the no-avocado meals and against the <1 avocado meals, respectively
+  * Across all meal types, meal energy content increased with avocado intake
+  * Most pairwise comparisons within the same meal type were significant, with two exceptions:
+    * <1 avocado vs 1+ avocado comparison in the morning meal
+    * <1 avocado vs 1+ avocado comparison in the late-night snack
+
+
+```{r lmm_avocado_log_kcal}
+
+# Mixed models ------------------------------------------------------------
+
+## Food kcal --------------------------------------------------------------
+
+# Data for model
+analytic_df2 <- analytic_df %>% 
+  arrange(pid, visitcode, cmealid) %>% 
+  filter(!is.na(meal_place)) %>% 
+  mutate(
+    log_food_kcal = log(food_kcal),
+    meal_type = relevel(meal_type, ref = "Evening meal"),
+    cmealid = factor(cmealid),
+    daily_kcal100 = kcal_per_day / 100,
+    meal_time_hr = tmtime_fixed / 3600,
+    meal_period = case_when(
+      meal_type %in% c("Morning meal", "Morning snack") ~ 1,
+      meal_type %in% c("Midday meal", "Midday snack") ~ 2,
+      meal_type %in% c("Evening meal", "Late night snack") ~ 0
+    ),
+    meal_period = factor(meal_period, labels = c("Evening", "Morning", "Midday"))
+    )
+
+# Covariates
+covars <- c(
+  "age", 
+  "sex", 
+  "race", 
+  "bmi", 
+  "region", 
+  "weekday", 
+  "meal_place", 
+  "meal_freq", 
+  "daily_kcal100"
+)
+
+# Fit the model with covariates only
+# Create formula
+fm <- formula(paste("log_food_kcal ~", paste(covars, collapse = " + ")))
+
+# Run covariates-only model
+log_food_kcal_0 <- lme(
+  fixed       = fm,
+  random      = ~ 1 + visitcode | pid,          
+  correlation = corCAR1(form = ~ meal_time_hr | pid/visitcode),
+  data        = analytic_df2,
+  method      = "REML",
+  control = lmeControl(
+    opt = "optim",
+    maxIter = 200,
+    msMaxIter = 200
+  )
+)
+
+# Add avocado intake * meal type interaction
+log_food_kcal_1 <- update(log_food_kcal_0, . ~ . + avocado_intake_cat * meal_type)
+
+# Estimated marginal means
+emmeans_avocado <- emmeans(log_food_kcal_1, ~avocado_intake_cat | meal_type, weights = "proportional")
+pairs_avocado   <- pairs(emmeans_avocado, adjust = "tukey")
+emmeans_tab     <- make_emmeans_tab(emmeans_avocado, pairs_avocado, exponentiate = TRUE, digits = 1)
+
+# Table format
+emmeans_tab %>%
+  select(-meal_or_snack) %>% 
+  select(meal_type, everything()) %>%
+  mutate(across(where(is.character), ~replace_na(., ""))) %>%
+  kable(
+    col.names = c(
+      "Meal type", 
+      "Avocado intake", 
+      "Adjusted mean", 
+      "Lower 95% CL", 
+      "Upper 95% CL", 
+      "p-val: vs No avocado",
+      "p-val: vs <1 avocado"
+      ),
+    align     = c("l", "l", "r", "r", "r", "r", "r")
+  ) %>%
+  kable_styling() %>%
+  collapse_rows(columns = 1, valign = "top")
+
+```
+
+```{r lmm_avocado_log_kcal_plot}
+
+# Bar chart
+emmeans_tab %>% 
+  ggplot(aes(x = meal_type, y = emmean, fill = avocado_intake_cat)) +
+  geom_col(position = "dodge") +
+  geom_errorbar(
+    aes(ymin = lower.CL, ymax = upper.CL),
+    width = 0.2,
+    position = position_dodge(0.9)
+  ) +
+  facet_wrap(~ meal_or_snack, scales = "free_x") +
+  labs(
+    title = "Estimated marginal means (with 95% CI) of food kcal",
+    x = "", 
+    y = "Adjusted mean energy content (kcal/meal)",
+    fill = "") +
+  theme(legend.position = "bottom")
+
+```
+
+### Effect of avocado consumption on energy density
+
+* The interaction between meal type and avocado intake was highly significant (p <.0001),
+  * suggesting that the effects of avocado intake on energy density differed across meal types
+
+* Among the covariates: 
+  * Age, sex, BMI, day of the week, and daily were not statistically significant
+  * The following covariates were significant:
+    * Race/ethnicity   (p = 0.038, lower density among Asians) 
+    * Region           (p = 0.021, higher density in the west coast) 
+    * Meal environment (p = 0.004, higher density in "Daycare/Party/Travelling/Other")
+    * Meal frequency   (p = 0.002, higher the frequency, lower the density)
+
+* The table below presents estimated marginal means of energy density by meal type and avocado intake category, adjusted for all covariates in the model
+  
+* Overall, energy density tended to be highest in meals that did not include any avocado 
+  * Among snacks, energy density was significantly higher in snacks containing no avocado compared to snacks containing <1 avocado or 1+ avocados, across all snack periods (morning, midday, and late-night). The difference between the latter two was not statistically significant.
+  * Among meals, significant differences were found in three comparisons:
+    * no avocado vs <1 avocado in the morning meal
+    * no avocado vs 1+ avocado in the morning meal
+    * <1 avocado vs 1+ avocado in the midday meal
+
+```{r lmm_avocado_energy_density}
+
+## Energy density ---------------------------------------------------------
+
+# Run covariates-only model
+energy_density_0 <- update(
+  log_food_kcal_0, 
+  food_density ~ ., 
+  data = analytic_df2,
+  subset = !is.na(food_density)
+)
+
+# Add avocado intake * meal type interaction
+energy_density_1 <- update(energy_density_0, . ~ . + avocado_intake_cat * meal_type)
+
+# Estimated marginal means
+emmeans_avocado <- emmeans(energy_density_1, ~avocado_intake_cat | meal_type, weights = "proportional")
+pairs_avocado   <- pairs(emmeans_avocado, adjust = "tukey")
+emmeans_tab     <- make_emmeans_tab(emmeans_avocado, pairs_avocado, exponentiate = FALSE, digits = 2)
+
+# Table format
+emmeans_tab %>%
+  select(-meal_or_snack) %>% 
+  select(meal_type, everything()) %>%
+  mutate(across(where(is.character), ~replace_na(., ""))) %>%
+  kable(
+    col.names = c(
+      "Meal type", 
+      "Avocado intake", 
+      "Adjusted mean", 
+      "Lower 95% CL", 
+      "Upper 95% CL", 
+      "p-val: vs No avocado",
+      "p-val: vs <1 avocado"
+      ),
+    align     = c("l", "l", "r", "r", "r", "r", "r")
+  ) %>%
+  kable_styling() %>%
+  collapse_rows(columns = 1, valign = "top")
+
+```
+
+```{r lmm_avocado_energy_density_plot}
+
+# Bar chart
+emmeans_tab %>% 
+  ggplot(aes(x = meal_type, y = emmean, fill = avocado_intake_cat)) +
+  geom_col(position = "dodge") +
+  geom_errorbar(
+    aes(ymin = lower.CL, ymax = upper.CL),
+    width = 0.2,
+    position = position_dodge(0.9)
+  ) +
+  facet_wrap(~ meal_or_snack, scales = "free_x") +
+  labs(
+    title = "Estimated marginal means (with 95% CI) of energy density",
+    x = "", 
+    y = "Adjusted mean energy density (kcal/gram)",
+    fill = "") +
+  theme(legend.position = "bottom")
+
+```
+
+
+### Effect of preceding avocado consumption on meal energy intake
+
+* The interaction between meal type and preceding avocado intake was statistically significant (p = 0.010),
+  * suggesting that the effects of preceding avocado intake on meal energy content differed across meal types
+
+* Among the covariates: 
+  * Age, sex, race/ethinicity, BMI, region, and day of the week were not statistically significant
+  * Meal environment, meal frequency, daily energy intake were all highly significant (p <.0001)
+    * Meal environment: Significantly higher kcal for "Deli/Take-out/Restaurant"
+    * Meal frequency: Higher the frequency, lower the energy intake
+    * Daily energy intake: Higher the daily kcal, higher the meal kcal
+
+* The table below presents estimated marginal means of meal energy intake by meal type and preceding avocado intake category, 
+  * adjusted for all covariates in the model and 
+  * back-transformed to the original scale (kcal)
+  
+* For midday meals, the absence of avocado in the preceding eating occasion was associated with significantly higher energy content in the subsequent meal, compared to when any amount of avocado was consumed
+  * No significant differences were found for the morning or evening meals
+  
+* For morning snacks, a similar pattern was observed -- the absence of avocado in the preceding eating occasion was associated with significantly higher energy content in the subsequent eating occasion
+  * For midday snacks, energy content was significantly lower when 1+ avocado was consumed in the preceding eating occasion compared to when none or <1 avocado was consumed
+  
+
+```{r lmm_lag_avocado_log_kcal}
+
+# Effect of avocado intake on the subsequent meal -------------------------
+
+## Food kcal --------------------------------------------------------------
+
+# Run covariates-only model
+log_food_kcal_0 <- lme(
+  fixed       = fm,
+  random      = ~ 1 + visitcode | pid,          
+  correlation = corCAR1(form = ~ meal_time_hr | pid/visitcode),
+  data        = analytic_df2,
+  subset      = !is.na(lag_avocado_intake_cat),
+  method      = "REML",
+  control = lmeControl(
+    opt = "optim",
+    maxIter = 200,
+    msMaxIter = 200
+  )
+)
+
+# Add avocado intake * meal type interaction
+log_food_kcal_1 <- update(log_food_kcal_0, . ~ . + lag_avocado_intake_cat * meal_type)
+
+# Estimated marginal means
+emmeans_avocado <- emmeans(log_food_kcal_1, ~lag_avocado_intake_cat | meal_type, weights = "proportional")
+pairs_avocado   <- pairs(emmeans_avocado, adjust = "tukey")
+emmeans_tab     <- make_emmeans_tab(emmeans_avocado, pairs_avocado, exponentiate = TRUE, digits = 1)
+
+# Table format
+emmeans_tab %>%
+  select(-meal_or_snack) %>% 
+  select(meal_type, everything()) %>%
+  mutate(across(where(is.character), ~replace_na(., ""))) %>%
+  kable(
+    col.names = c(
+      "Meal type", 
+      "Preceding avocado intake", 
+      "Adjusted mean", 
+      "Lower 95% CL", 
+      "Upper 95% CL", 
+      "p-val: vs No avocado",
+      "p-val: vs <1 avocado"
+      ),
+    align     = c("l", "l", "r", "r", "r", "r", "r")
+  ) %>%
+  kable_styling() %>%
+  collapse_rows(columns = 1, valign = "top")
+
+```
+
+```{r lmm_lag_avocado_log_kcal_plot}
+
+# Bar chart
+emmeans_tab %>% 
+  ggplot(aes(x = meal_type, y = emmean, fill = lag_avocado_intake_cat)) +
+  geom_col(position = "dodge") +
+  geom_errorbar(
+    aes(ymin = lower.CL, ymax = upper.CL),
+    width = 0.2,
+    position = position_dodge(0.9)
+  ) +
+  facet_wrap(~ meal_or_snack, scales = "free_x") +
+  labs(
+    title = "Estimated marginal means (with 95% CI) of energy density",
+    x = "", 
+    y = "Adjusted mean energy density (kcal/gram)",
+    fill = "Preceding EO") +
+  theme(legend.position = "bottom")
+
+```
+
+
+### Effect of preceding avocado consumption on energy density
+
+* The interaction between meal type and preceding avocado intake was not significant (p = 0.09),
+
+* Among the covariates: 
+  * Age, sex, race/ethinicity, BMI, region, day of the week, and meal frequency were not statistically significant
+  * Meal environment (p = 0.0002) and daily energy intake (p <.0001) were highly significant 
+    * Meal environment: Significantly higher density for "Daycare/Party/Travelling/Other"
+    * Daily energy intake: Energy density was positively associated with daily energy intake
+
+* The table below presents estimated marginal means of energy density by preceding avocado intake, adjusted for all covariates in the model
+  * Energy density tended to increase with greater avocado consumption, with a significant difference observed between meals containing no avocado and meals containing 1+ avocados in the preceding eating occasion (p = 0.012).
+  
+```{r lmm_lag_avocado_energy_density}
+
+# Run covariates-only model
+energy_density_0 <- update(
+  log_food_kcal_0, 
+  food_density ~ ., 
+  subset = !is.na(lag_avocado_intake_cat) & !is.na(food_density))
+
+# Add avocado intake * meal type interaction
+energy_density_1 <- update(energy_density_0, . ~ . + lag_avocado_intake_cat * meal_type)
+
+# Remove avocado intake * meal type interaction
+energy_density_2 <- update(energy_density_1, . ~ . - lag_avocado_intake_cat:meal_type)
+
+# Estimated marginal means
+emmeans_avocado <- emmeans(energy_density_2, ~lag_avocado_intake_cat, weights = "proportional")
+
+pairs_df <- pairs(emmeans_avocado, adjust = "tukey") %>%
+  summary() %>%
+  as.data.frame() %>%
+  select(contrast, p.value) %>%
+  mutate(p.value = format.pval(round(p.value, 4), digits = 4, eps = 0.0001, scientific = FALSE)) %>%
+  pivot_wider(names_from = contrast, values_from = p.value) %>%
+  rename(
+    vs_no_avoc  = 1,  # "No avocado at all - <1 avocado"
+    vs_no_avoc2 = 2,  # "No avocado at all - 1 whole avocado or more"
+    vs_lt_1avoc = 3   # "<1 avocado - 1 whole avocado or more"
+  )
+
+emmeans_tab_overall <- summary(emmeans_avocado) %>%
+  as.data.frame() %>%
+  select(lag_avocado_intake_cat, emmean, lower.CL, upper.CL) %>%
+  mutate(across(c(emmean, lower.CL, upper.CL), ~ round(., 2))) %>%
+  mutate(
+    vs_no_avoc = case_when(
+      lag_avocado_intake_cat == levels(lag_avocado_intake_cat)[2] ~ pairs_df$vs_no_avoc,
+      lag_avocado_intake_cat == levels(lag_avocado_intake_cat)[3] ~ pairs_df$vs_no_avoc2,
+      TRUE ~ NA_character_
+    ),
+    vs_lt_1avoc = case_when(
+      lag_avocado_intake_cat == levels(lag_avocado_intake_cat)[3] ~ pairs_df$vs_lt_1avoc,
+      TRUE ~ NA_character_
+    )
+  )
+
+emmeans_tab_overall %>% 
+  mutate(across(where(is.character), ~replace_na(., ""))) %>%
+  kable(
+    col.names = c(
+      "Preceding avocado intake", 
+      "Adjusted mean", 
+      "Lower 95% CL", 
+      "Upper 95% CL", 
+      "p-val: vs No avocado",
+      "p-val: vs <1 avocado"
+      ),
+    align     = c("l", "r", "r", "r", "r", "r")
+  ) %>%
+  kable_styling() %>%
+  collapse_rows(columns = 1, valign = "top")
+
+```
+
+
+### Effect of preceding avocado consumption on mealtime interval
+
+* [**In progress**]

@@ -20,12 +20,8 @@ pacs <- c(
 
 sapply(pacs, require, character.only = TRUE)
 
-# Function to search variables
-search_var <- function(df, pattern, ...) {
-  loc <- grep(pattern, names(df), ...)
-  if (length(loc) == 0) warning("There are no such variables")
-  else return(data.frame(loc = loc, varname = names(df)[loc]))
-}
+# Read functions
+source("functions.R")
 
 # Data dictionary ---------------------------------------------------------
 
@@ -815,7 +811,6 @@ tab %>%
 analytic_df2 <- analytic_df %>% 
   arrange(pid, visitcode, cmealid) %>% 
   filter(!is.na(meal_place)) %>% 
-  # filter(!is.na(lag_avocado_intake_cat)) %>% 
   mutate(
     log_food_kcal = log(food_kcal),
     meal_type = relevel(meal_type, ref = "Evening meal"),
@@ -846,13 +841,12 @@ covars <- c(
 
 # Effect of avocado intake on the same meal -------------------------------
 
-
 ## Food kcal --------------------------------------------------------------
 
 # Fit the model with covariates only
 # Assumes random subjects (intercept) and recall day (nested in pid)
 # G matrix: random intercept + visitcode | pid
-# R matrix: CS structure for meals within visitcode(pid)
+# R matrix: CAR(1) structure for meals within visitcode(pid)
 
 # Create formula
 fm <- formula(paste("log_food_kcal ~", paste(covars, collapse = " + ")))
@@ -878,50 +872,26 @@ log_food_kcal_0 <- lme(
 summary(log_food_kcal_0)$tTable %>% 
   printCoefmat(digits = 4, P.values = TRUE, has.Pvalue = TRUE)
 
-# Overall tests for factors
-car::Anova(log_food_kcal_0, type = "III") 
+# LRT tests for each covariate
+lrt_each_covariate(log_food_kcal_0)
 
 # Exponentiate beta coefficients
 intervals(log_food_kcal_0, which = "fixed")$fixed %>% exp()
 
-# Add avocado intake and meal type (no interaction)
-log_food_kcal_1    <- update(log_food_kcal_0, . ~ . + avocado_intake_cat + meal_type)
-log_food_kcal_1_ML <- update(log_food_kcal_1, method = "ML")
-
 # Add avocado intake * meal type interaction
-log_food_kcal_2    <- update(log_food_kcal_0, . ~ . + avocado_intake_cat * meal_type)
-log_food_kcal_2_ML <- update(log_food_kcal_2, method = "ML")
+log_food_kcal_1 <- update(log_food_kcal_0, . ~ . + avocado_intake_cat * meal_type)
 
 # LR test for interaction: Highly signifiacnt
-anova(log_food_kcal_1_ML, log_food_kcal_2_ML) 
+lrt_each_covariate(log_food_kcal_1)
 
 # Check results
-summary(log_food_kcal_2)$tTable %>% 
+summary(log_food_kcal_1)$tTable %>% 
   printCoefmat(digits = 4, P.values = TRUE, has.Pvalue = TRUE)
 
 # Estimated marginal means
-emmeans_avocado <- emmeans(log_food_kcal_2, ~avocado_intake_cat | meal_type, weights = "proportional")
-summary(emmeans_avocado)
-
-emmeans_tab <- summary(emmeans_avocado) %>%
-  as.data.frame() %>%
-  mutate(across(c(emmean, lower.CL, upper.CL), exp)) %>% 
-  mutate(across(c(emmean, lower.CL, upper.CL), ~ round(., 1))) %>% 
-  select(-SE, -df) %>% 
-  mutate(
-    meal_type = fct_relevel(
-      meal_type, 
-      "Morning meal", 
-      "Morning snack",
-      "Midday meal", 
-      "Midday snack",
-      "Evening meal",
-      "Late night snack"
-      ),
-    meal_or_snack = if_else(as.numeric(meal_type) %in% c(2, 4, 6), 1, 0),
-    meal_or_snack = factor(meal_or_snack, labels = c("Meal", "Snack"))
-    ) %>%
-  arrange(meal_or_snack, meal_type)
+emmeans_avocado <- emmeans(log_food_kcal_1, ~avocado_intake_cat | meal_type, weights = "proportional")
+pairs_avocado   <- pairs(emmeans_avocado, adjust = "tukey")
+emmeans_tab     <- make_emmeans_tab(emmeans_avocado, pairs_avocado, exponentiate = TRUE, digits = 1)
 
 # Table format
 emmeans_tab %>% select(-meal_or_snack)
@@ -944,65 +914,41 @@ emmeans_tab %>%
   theme(legend.position = "bottom")
 
 
-pairs(emmeans_avocado, adjust = "tukey")
-
-
 ## Energy density ---------------------------------------------------------
 
-analytic_df3 <- analytic_df2 %>% 
-  filter(!is.na(food_density))
-  
 # Run covariates-only model
-energy_density_0 <- update(log_food_kcal_0, food_density ~ ., data = analytic_df3)
+energy_density_0 <- update(
+  log_food_kcal_0, 
+  food_density ~ ., 
+  data = analytic_df2,
+  subset = !is.na(food_density)
+)
 
 # Check results
 # Significant: Weekday, meal_place, meal_freq, daily_kcal
 summary(energy_density_0)$tTable %>% 
   printCoefmat(digits = 4, P.values = TRUE, has.Pvalue = TRUE)
 
-# Overall tests for factors
-car::Anova(energy_density_0, type = "III") 
+# LRT tests for each covariate
+lrt_each_covariate(energy_density_0)
 
 # Beta coefficients
 intervals(energy_density_0, which = "fixed")$fixed
 
-# Add avocado intake and meal type (no interaction)
-energy_density_1    <- update(energy_density_0, . ~ . + avocado_intake_cat + meal_type)
-energy_density_1_ML <- update(energy_density_1, method = "ML")
-
 # Add avocado intake * meal type interaction
-energy_density_2    <- update(energy_density_0, . ~ . + avocado_intake_cat * meal_type)
-energy_density_2_ML <- update(energy_density_2, method = "ML")
+energy_density_1 <- update(energy_density_0, . ~ . + avocado_intake_cat * meal_type)
 
 # LR test for interaction: Highly signifiacnt
-anova(energy_density_1_ML, energy_density_2_ML) 
+lrt_each_covariate(energy_density_1)
 
 # Check results
-summary(energy_density_2)$tTable %>% 
+summary(energy_density_1)$tTable %>% 
   printCoefmat(digits = 4, P.values = TRUE, has.Pvalue = TRUE)
 
 # Estimated marginal means
-emmeans_avocado <- emmeans(energy_density_2, ~avocado_intake_cat | meal_type, weights = "proportional")
-summary(emmeans_avocado)
-
-emmeans_tab <- summary(emmeans_avocado) %>%
-  as.data.frame() %>%
-  mutate(across(c(emmean, lower.CL, upper.CL), ~ round(., 2))) %>% 
-  select(-SE, -df) %>% 
-  mutate(
-    meal_type = fct_relevel(
-      meal_type, 
-      "Morning meal", 
-      "Morning snack",
-      "Midday meal", 
-      "Midday snack",
-      "Evening meal",
-      "Late night snack"
-      ),
-    meal_or_snack = if_else(as.numeric(meal_type) %in% c(2, 4, 6), 1, 0),
-    meal_or_snack = factor(meal_or_snack, labels = c("Meal", "Snack"))
-    ) %>%
-  arrange(meal_or_snack, meal_type)
+emmeans_avocado <- emmeans(energy_density_1, ~avocado_intake_cat | meal_type, weights = "proportional")
+pairs_avocado   <- pairs(emmeans_avocado, adjust = "tukey")
+emmeans_tab     <- make_emmeans_tab(emmeans_avocado, pairs_avocado, exponentiate = FALSE, digits = 2)
 
 # Table format
 emmeans_tab %>% select(-meal_or_snack)
@@ -1024,23 +970,18 @@ emmeans_tab %>%
     fill = "") +
   theme(legend.position = "bottom")
 
-pairs(emmeans_avocado, adjust = "tukey")
-
 
 # Effect of avocado intake on the subsequent meal -------------------------
 
 ## Food kcal --------------------------------------------------------------
 
-analytic_df4 <- analytic_df2 %>% 
-  filter(!is.na(lag_avocado_intake_cat))
-
 # Run covariates-only model
 log_food_kcal_0 <- lme(
   fixed       = fm,
   random      = ~ 1 + visitcode | pid,          
-  # correlation = corCompSymm(form = ~ 1 | pid/visitcode),
   correlation = corCAR1(form = ~ meal_time_hr | pid/visitcode),
-  data        = analytic_df4,
+  data        = analytic_df2,
+  subset      = !is.na(lag_avocado_intake_cat),
   method      = "REML",
   control = lmeControl(
     opt = "optim",
@@ -1054,50 +995,26 @@ log_food_kcal_0 <- lme(
 summary(log_food_kcal_0)$tTable %>% 
   printCoefmat(digits = 4, P.values = TRUE, has.Pvalue = TRUE)
 
-# Overall tests for factors
-car::Anova(log_food_kcal_0, type = "III") 
+# LRT tests for each covariate
+lrt_each_covariate(log_food_kcal_0)
 
 # Exponentiate beta coefficients
 intervals(log_food_kcal_0, which = "fixed")$fixed %>% exp()
 
-# Add avocado intake and meal type (no interaction)
-log_food_kcal_1    <- update(log_food_kcal_0, . ~ . + lag_avocado_intake_cat + meal_type)
-log_food_kcal_1_ML <- update(log_food_kcal_1, method = "ML")
-
 # Add avocado intake * meal type interaction
-log_food_kcal_2    <- update(log_food_kcal_0, . ~ . + lag_avocado_intake_cat * meal_type)
-log_food_kcal_2_ML <- update(log_food_kcal_2, method = "ML")
+log_food_kcal_1 <- update(log_food_kcal_0, . ~ . + lag_avocado_intake_cat * meal_type)
 
 # LR test for interaction: Highly signifiacnt
-anova(log_food_kcal_1_ML, log_food_kcal_2_ML) 
+lrt_each_covariate(log_food_kcal_1)
 
 # Check results
-summary(log_food_kcal_2)$tTable %>% 
+summary(log_food_kcal_1)$tTable %>% 
   printCoefmat(digits = 4, P.values = TRUE, has.Pvalue = TRUE)
 
 # Estimated marginal means
-emmeans_avocado <- emmeans(log_food_kcal_2, ~lag_avocado_intake_cat | meal_type, weights = "proportional")
-summary(emmeans_avocado)
-
-emmeans_tab <- summary(emmeans_avocado) %>%
-  as.data.frame() %>%
-  mutate(across(c(emmean, lower.CL, upper.CL), exp)) %>% 
-  mutate(across(c(emmean, lower.CL, upper.CL), ~ round(., 1))) %>% 
-  select(-SE, -df) %>% 
-  mutate(
-    meal_type = fct_relevel(
-      meal_type, 
-      "Morning meal", 
-      "Morning snack",
-      "Midday meal", 
-      "Midday snack",
-      "Evening meal",
-      "Late night snack"
-      ),
-    meal_or_snack = if_else(as.numeric(meal_type) %in% c(2, 4, 6), 1, 0),
-    meal_or_snack = factor(meal_or_snack, labels = c("Meal", "Snack"))
-    ) %>%
-  arrange(meal_or_snack, meal_type)
+emmeans_avocado <- emmeans(log_food_kcal_1, ~lag_avocado_intake_cat | meal_type, weights = "proportional")
+pairs_avocado   <- pairs(emmeans_avocado, adjust = "tukey")
+emmeans_tab     <- make_emmeans_tab(emmeans_avocado, pairs_avocado, exponentiate = TRUE, digits = 1)
 
 # Table format
 emmeans_tab %>% select(-meal_or_snack)
@@ -1124,58 +1041,85 @@ pairs(emmeans_avocado, adjust = "tukey")
 
 ## Energy density ---------------------------------------------------------
 
-analytic_df5 <- analytic_df4 %>% 
-  filter(!is.na(food_density))
- 
 # Run covariates-only model
-energy_density_0 <- update(log_food_kcal_0, food_density ~ ., data = analytic_df5)
+energy_density_0 <- update(
+  log_food_kcal_0, 
+  food_density ~ ., 
+  subset = !is.na(lag_avocado_intake_cat) & !is.na(food_density))
 
 # Check results
 # Significant: Weekday, meal_place, meal_freq, daily_kcal
 summary(energy_density_0)$tTable %>% 
   printCoefmat(digits = 4, P.values = TRUE, has.Pvalue = TRUE)
 
-# Overall tests for factors
-car::Anova(energy_density_0, type = "III") 
+# LRT tests for each covariate
+lrt_each_covariate(energy_density_0)
 
 # Beta coefficients
 intervals(energy_density_0, which = "fixed")$fixed
 
-# Add avocado intake and meal type (no interaction)
-energy_density_1    <- update(energy_density_0, . ~ . + lag_avocado_intake_cat + meal_type)
-energy_density_1_ML <- update(energy_density_1, method = "ML")
-
 # Add avocado intake * meal type interaction
-energy_density_2    <- update(energy_density_0, . ~ . + lag_avocado_intake_cat * meal_type)
-energy_density_2_ML <- update(energy_density_2, method = "ML")
+energy_density_1 <- update(energy_density_0, . ~ . + lag_avocado_intake_cat * meal_type)
 
-# LR test for interaction: Not signifiacnt
-anova(energy_density_1_ML, energy_density_2_ML) 
+# LR test for interaction: Not significant
+lrt_each_covariate(energy_density_1)
+
+# Remove avocado intake * meal type interaction
+energy_density_2 <- update(energy_density_1, . ~ . - lag_avocado_intake_cat:meal_type)
+
+# LR test for interaction: Not significant
+lrt_each_covariate(energy_density_2)
 
 # Check results
-summary(energy_density_1)$tTable %>% 
+summary(energy_density_2)$tTable %>% 
   printCoefmat(digits = 4, P.values = TRUE, has.Pvalue = TRUE)
 
 # Estimated marginal means
-emmeans_avocado <- emmeans(energy_density_1, ~lag_avocado_intake_cat, weights = "proportional")
-summary(emmeans_avocado)
-pairs(emmeans_avocado, adjust = "tukey")
+emmeans_avocado <- emmeans(energy_density_2, ~lag_avocado_intake_cat, weights = "proportional")
+
+summary(emmeans_avocado) %>% 
+  as.data.frame() %>% 
+  select(lag_avocado_intake_cat, emmean, lower.CL, upper.CL)
+
+pairs_df <- pairs(emmeans_avocado, adjust = "tukey") %>%
+  summary() %>%
+  as.data.frame() %>%
+  select(contrast, p.value) %>%
+  mutate(p.value = format.pval(round(p.value, 4), digits = 4, eps = 0.0001, scientific = FALSE)) %>%
+  pivot_wider(names_from = contrast, values_from = p.value) %>%
+  rename(
+    vs_no_avoc  = 1,  # "No avocado at all - <1 avocado"
+    vs_no_avoc2 = 2,  # "No avocado at all - 1 whole avocado or more"
+    vs_lt_1avoc = 3   # "<1 avocado - 1 whole avocado or more"
+  )
+
+emmeans_tab_overall <- summary(emmeans_avocado) %>%
+  as.data.frame() %>%
+  select(lag_avocado_intake_cat, emmean, lower.CL, upper.CL) %>%
+  mutate(across(c(emmean, lower.CL, upper.CL), ~ round(., 2))) %>%
+  mutate(
+    vs_no_avoc = case_when(
+      lag_avocado_intake_cat == levels(lag_avocado_intake_cat)[2] ~ pairs_df$vs_no_avoc,
+      lag_avocado_intake_cat == levels(lag_avocado_intake_cat)[3] ~ pairs_df$vs_no_avoc2,
+      TRUE ~ NA_character_
+    ),
+    vs_lt_1avoc = case_when(
+      lag_avocado_intake_cat == levels(lag_avocado_intake_cat)[3] ~ pairs_df$vs_lt_1avoc,
+      TRUE ~ NA_character_
+    )
+  )
+
+
+
+## Effect of avocado intake on mealtime interval --------------------------
+
+
+
+
+
 
 
 # Memo --------------------------------------------------------------------
-
-
-# pairs(emmeans_avocado, adjust = "tukey", infer = TRUE) %>%
-#   as.data.frame() %>%
-#   ggplot(aes(x = estimate, y = contrast, color = meal_type)) +
-#   geom_point() +
-#   geom_errorbarh(aes(xmin = lower.CL, xmax = upper.CL), height = 0.2) +
-#   geom_vline(xintercept = 0, linetype = "dashed", color = "red") +
-#   facet_wrap(~ meal_type, scales = "free_y") +
-#   labs(x = "Estimated Difference", y = "Contrast") +
-#   theme_bw()
-
-# ref_grid(log_food_kcal_2)
 
 # R matrix: Toeplitz structure for meals within visitcode(pid)
 model_nlme_tp <- lme(
@@ -1192,7 +1136,6 @@ model_nlme_tp <- lme(
   )
 
 anova(model_nlme, model_nlme_tp)
-
 
 # R matrix: Continuous AR(1) structure based on actual meal time
 model_nlme_car <- lme(
