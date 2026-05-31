@@ -120,3 +120,116 @@ make_emmeans_tab <- function(emmeans_obj, pairs_obj, exponentiate = FALSE, digit
     ) %>%
     select(-vs_no_avoc2, -grp)
 }
+
+
+# Function to plot normalized residuals -----------------------------------
+
+plot_residuals <- function(model, 
+                           title = NULL,
+                           point_color = "steelblue",
+                           line_color = "red",
+                           alpha = 0.5) {
+  
+  # ----------------------------------------------------------------
+  # Input validation
+  # ----------------------------------------------------------------
+  
+  if (!inherits(model, "lme")) {
+    stop("model must be an lme object from the nlme package")
+  }
+  
+  # ----------------------------------------------------------------
+  # Extract residuals and fitted values
+  # ----------------------------------------------------------------
+  
+  resid_normalized <- residuals(model, type = "normalized")
+  fitted_values    <- fitted(model)
+  
+  # ----------------------------------------------------------------
+  # Set up plot layout: 1 row, 3 columns
+  # ----------------------------------------------------------------
+  
+  old_par <- par(no.readonly = TRUE)
+  on.exit(par(old_par))
+  
+  par(mfrow = c(1, 3),
+      mar   = c(4, 4, 3, 1),
+      oma   = c(0, 0, 3, 0))
+  
+  # ----------------------------------------------------------------
+  # Plot 1: QQ plot
+  # ----------------------------------------------------------------
+  
+  qqnorm(resid_normalized,
+         main = "QQ Plot",
+         xlab = "Theoretical Quantiles",
+         ylab = "Sample Quantiles",
+         pch  = 16,
+         col  = adjustcolor(point_color, alpha.f = alpha),
+         cex  = 0.7)
+  qqline(resid_normalized, 
+         col = line_color, 
+         lwd = 2)
+  
+  # ----------------------------------------------------------------
+  # Plot 2: Histogram with normal curve
+  # ----------------------------------------------------------------
+  
+  hist(resid_normalized,
+       breaks = 30,
+       main   = "Histogram",
+       xlab   = "Normalized Residuals",
+       ylab   = "Density",
+       col    = adjustcolor(point_color, alpha.f = alpha),
+       border = "white",
+       freq   = FALSE)
+  
+  curve(dnorm(x,
+              mean = mean(resid_normalized),
+              sd   = sd(resid_normalized)),
+        add = TRUE,
+        col = line_color,
+        lwd = 2)
+  
+  abline(v   = 0,
+         col = "grey50",
+         lty = 2,
+         lwd = 1.5)
+  
+  # ----------------------------------------------------------------
+  # Plot 3: Residuals vs fitted values
+  # ----------------------------------------------------------------
+  
+  plot(x    = fitted_values,
+       y    = resid_normalized,
+       main = "Residuals vs Fitted",
+       xlab = "Fitted Values",
+       ylab = "Normalized Residuals",
+       pch  = 16,
+       col  = adjustcolor(point_color, alpha.f = alpha),
+       cex  = 0.7)
+  
+  abline(h   = 0,
+         col = line_color,
+         lwd = 2,
+         lty = 2)
+  
+  lines(lowess(fitted_values, resid_normalized),
+        col = "darkgreen",
+        lwd = 2)
+  
+  # ----------------------------------------------------------------
+  # Overall title
+  # ----------------------------------------------------------------
+  
+  if (!is.null(title)) {
+    mtext(title,
+          outer = TRUE,
+          cex   = 1.2,
+          font  = 2,
+          line  = 1)
+  }
+  
+  invisible(resid_normalized)
+}
+

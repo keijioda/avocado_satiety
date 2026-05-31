@@ -384,8 +384,7 @@ analytic_df %>%
   mutate(percent = n / sum(n) * 100)
 
 analytic_df %>% 
-  mutate(day_of_wk = factor(day_of_wk, labels = c("Weekends", "Weekdays"))) %>% 
-  count(day_of_wk) %>% 
+  count(weekday) %>% 
   mutate(percent = n / sum(n) * 100)
 
 # Add mean numbers of meals, mean kcal per week
@@ -792,7 +791,7 @@ tab <- analytic_df %>%
 tab %>% 
   ggplot(aes(x = meal_type, y = mean_meal_interval_hr, fill = lag_avocado_intake_cat)) +
   geom_bar(stat = "identity", position = "dodge") +
-  facet_wrap(~meal_or_snack, scales = "free") +
+  facet_wrap(~meal_or_snack, scales = "free_x") +
   theme(legend.position = "bottom") +
   labs(x = "", y = "Mean meal interval (hour)", fill = "Prior avocado intake")
 
@@ -1038,6 +1037,9 @@ emmeans_tab %>%
 
 pairs(emmeans_avocado, adjust = "tukey")
 
+# Check normalized residuals
+plot_residuals(log_food_kcal_1)
+
 
 ## Energy density ---------------------------------------------------------
 
@@ -1109,48 +1111,66 @@ emmeans_tab_overall <- summary(emmeans_avocado) %>%
     )
   )
 
+# Check normalized residuals
+plot_residuals(energy_density_2)
 
 
-## Effect of avocado intake on mealtime interval --------------------------
+# Effect of avocado intake on mealtime interval ---------------------------
 
+# Run covariates-only model
+meal_interval_0 <- update(
+  log_food_kcal_0, 
+  meal_interval_hr ~ ., 
+  subset = !is.na(lag_avocado_intake_cat) & !is.na(meal_interval_hr))
 
+# Check results
+# Significant: Sex, Weekday, meal place,meal frequency
+summary(meal_interval_0)$tTable %>% 
+  printCoefmat(digits = 4, P.values = TRUE, has.Pvalue = TRUE)
 
+# LRT tests for each covariate
+lrt_each_covariate(meal_interval_0)
 
+# Beta coefficients
+intervals(meal_interval_0, which = "fixed")$fixed
 
+# Add avocado intake * meal type interaction
+meal_interval_1 <- update(meal_interval_0, . ~ . + lag_avocado_intake_cat * meal_type)
 
+# LR test for interaction: Highly significant
+lrt_each_covariate(meal_interval_1)
 
-# Memo --------------------------------------------------------------------
+# Check results
+summary(meal_interval_1)$tTable %>% 
+  printCoefmat(digits = 4, P.values = TRUE, has.Pvalue = TRUE)
 
-# R matrix: Toeplitz structure for meals within visitcode(pid)
-model_nlme_tp <- lme(
-  food_kcal ~ age + sex + race + bmi + meal_type + meal_place + weekday + daily_kcal100 + avocado_intake_cat * meal_type,
-  random = ~ 1 + visitcode | pid,          
-  correlation = corARMA(form = ~ 1 | pid/visitcode, p = 0, q = 2),
-  data = analytic_df2,
-  # method = "REML",
-  method = "ML",
-  control = lmeControl(
-    opt = "optim",
-    maxIter = 200,
-    msMaxIter = 200)
-  )
+# Estimated marginal means
+emmeans_avocado <- emmeans(meal_interval_1, ~lag_avocado_intake_cat | meal_type, weights = "proportional")
+pairs_avocado   <- pairs(emmeans_avocado, adjust = "tukey")
+emmeans_tab     <- make_emmeans_tab(emmeans_avocado, pairs_avocado, digits = 2)
 
-anova(model_nlme, model_nlme_tp)
+# Table format
+emmeans_tab %>% select(-meal_or_snack)
 
-# R matrix: Continuous AR(1) structure based on actual meal time
-model_nlme_car <- lme(
-  food_kcal ~ age + sex + race + bmi + meal_type + meal_place + weekday + daily_kcal100 + avocado_intake_cat * meal_type,
-  random = ~ 1 + visitcode | pid,          
-  correlation = corCAR1(form = ~ meal_time_hr | pid/visitcode),
-  data = analytic_df2,
-  # method = "REML",
-  method = "ML",
-  control = lmeControl(
-    opt = "optim",
-    maxIter = 200,
-    msMaxIter = 200)
-)
+# Bar chart
+emmeans_tab %>% 
+  ggplot(aes(x = meal_type, y = emmean, fill = lag_avocado_intake_cat)) +
+  geom_col(position = "dodge") +
+  geom_errorbar(
+    aes(ymin = lower.CL, ymax = upper.CL),
+    width = 0.2,
+    position = position_dodge(0.9)
+  ) +
+  facet_wrap(~ meal_or_snack, scales = "free_x") +
+  labs(
+    title = "Estimated marginal means (with 95% CI) of meal interval (hour)",
+    x = "", 
+    y = "Adjusted mean meal interval (hour)",
+    fill = "") +
+  theme(legend.position = "bottom")
 
-AIC(model_nlme_tp, model_nlme_car)
-BIC(model_nlme_tp, model_nlme_car)
+pairs(emmeans_avocado, adjust = "tukey")
+
+# Check normalized residuals
+plot_residuals(meal_interval_1)
 
