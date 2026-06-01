@@ -13,7 +13,7 @@ Avocado Satiety Study
 
 - There are five data files:
   - `macro_protocol3.xlsx`
-    - Includes patient demographics
+    - Includes participant demographics
     - n = 900 participants, `cpartid` are all distinct
   - `HAT_SCMeal.csv`
     - Meal-level data from NDSR
@@ -1463,7 +1463,7 @@ No avocado at all
     comparisons:
     - no avocado vs \<1 avocado in the morning meal
     - no avocado vs 1+ avocado in the morning meal
-    - \<1 avocado vs 1+ avocado in the midday meal
+    - no avocado vs 1+ avocado in the midday meal
 
 <table class="table" style="color: black; margin-left: auto; margin-right: auto;">
 
