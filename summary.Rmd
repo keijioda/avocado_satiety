@@ -1225,9 +1225,9 @@ emmeans_tab %>%
   ) +
   facet_wrap(~ meal_or_snack, scales = "free_x") +
   labs(
-    title = "Estimated marginal means (with 95% CI) of energy density",
+    title = "Estimated marginal means (with 95% CI) of energy content",
     x = "", 
-    y = "Adjusted mean energy density (kcal/gram)",
+    y = "Adjusted mean energy content (kcal/gram)",
     fill = "Preceding EO") +
   theme(legend.position = "bottom")
 
