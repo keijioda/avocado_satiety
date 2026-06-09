@@ -791,6 +791,11 @@ p-val: vs No avocado
 p-val: vs \<1 avocado
 </th>
 
+<th style="text-align:right;">
+
+Trend p-val
+</th>
+
 </tr>
 
 </thead>
@@ -832,6 +837,11 @@ No avocado at all
 
 </td>
 
+<td style="text-align:right;">
+
+\<.0001
+</td>
+
 </tr>
 
 <tr>
@@ -859,6 +869,10 @@ No avocado at all
 <td style="text-align:right;">
 
 \<0.0001
+</td>
+
+<td style="text-align:right;">
+
 </td>
 
 <td style="text-align:right;">
@@ -899,6 +913,10 @@ No avocado at all
 0.0988
 </td>
 
+<td style="text-align:right;">
+
+</td>
+
 </tr>
 
 <tr>
@@ -936,6 +954,11 @@ No avocado at all
 
 </td>
 
+<td style="text-align:right;">
+
+\<.0001
+</td>
+
 </tr>
 
 <tr>
@@ -963,6 +986,10 @@ No avocado at all
 <td style="text-align:right;">
 
 0.0002
+</td>
+
+<td style="text-align:right;">
+
 </td>
 
 <td style="text-align:right;">
@@ -1003,6 +1030,10 @@ No avocado at all
 0.0040
 </td>
 
+<td style="text-align:right;">
+
+</td>
+
 </tr>
 
 <tr>
@@ -1040,6 +1071,11 @@ No avocado at all
 
 </td>
 
+<td style="text-align:right;">
+
+\<.0001
+</td>
+
 </tr>
 
 <tr>
@@ -1067,6 +1103,10 @@ No avocado at all
 <td style="text-align:right;">
 
 0.0165
+</td>
+
+<td style="text-align:right;">
+
 </td>
 
 <td style="text-align:right;">
@@ -1107,6 +1147,10 @@ No avocado at all
 0.0026
 </td>
 
+<td style="text-align:right;">
+
+</td>
+
 </tr>
 
 <tr>
@@ -1144,6 +1188,11 @@ No avocado at all
 
 </td>
 
+<td style="text-align:right;">
+
+\<.0001
+</td>
+
 </tr>
 
 <tr>
@@ -1171,6 +1220,10 @@ No avocado at all
 <td style="text-align:right;">
 
 0.0107
+</td>
+
+<td style="text-align:right;">
+
 </td>
 
 <td style="text-align:right;">
@@ -1211,6 +1264,10 @@ No avocado at all
 0.0114
 </td>
 
+<td style="text-align:right;">
+
+</td>
+
 </tr>
 
 <tr>
@@ -1248,6 +1305,11 @@ No avocado at all
 
 </td>
 
+<td style="text-align:right;">
+
+\<.0001
+</td>
+
 </tr>
 
 <tr>
@@ -1275,6 +1337,10 @@ No avocado at all
 <td style="text-align:right;">
 
 0.0093
+</td>
+
+<td style="text-align:right;">
+
 </td>
 
 <td style="text-align:right;">
@@ -1315,6 +1381,10 @@ No avocado at all
 0.0039
 </td>
 
+<td style="text-align:right;">
+
+</td>
+
 </tr>
 
 <tr>
@@ -1352,6 +1422,11 @@ No avocado at all
 
 </td>
 
+<td style="text-align:right;">
+
+\<.0001
+</td>
+
 </tr>
 
 <tr>
@@ -1379,6 +1454,10 @@ No avocado at all
 <td style="text-align:right;">
 
 0.0005
+</td>
+
+<td style="text-align:right;">
+
 </td>
 
 <td style="text-align:right;">
@@ -1417,6 +1496,10 @@ No avocado at all
 <td style="text-align:right;">
 
 0.6211
+</td>
+
+<td style="text-align:right;">
+
 </td>
 
 </tr>
@@ -1506,6 +1589,11 @@ p-val: vs No avocado
 p-val: vs \<1 avocado
 </th>
 
+<th style="text-align:right;">
+
+Trend p-val
+</th>
+
 </tr>
 
 </thead>
@@ -1547,6 +1635,11 @@ No avocado at all
 
 </td>
 
+<td style="text-align:right;">
+
+\<.0001
+</td>
+
 </tr>
 
 <tr>
@@ -1574,6 +1667,10 @@ No avocado at all
 <td style="text-align:right;">
 
 0.0269
+</td>
+
+<td style="text-align:right;">
+
 </td>
 
 <td style="text-align:right;">
@@ -1614,6 +1711,10 @@ No avocado at all
 0.3641
 </td>
 
+<td style="text-align:right;">
+
+</td>
+
 </tr>
 
 <tr>
@@ -1651,6 +1752,11 @@ No avocado at all
 
 </td>
 
+<td style="text-align:right;">
+
+0.0024
+</td>
+
 </tr>
 
 <tr>
@@ -1678,6 +1784,10 @@ No avocado at all
 <td style="text-align:right;">
 
 0.1596
+</td>
+
+<td style="text-align:right;">
+
 </td>
 
 <td style="text-align:right;">
@@ -1718,6 +1828,10 @@ No avocado at all
 0.7238
 </td>
 
+<td style="text-align:right;">
+
+</td>
+
 </tr>
 
 <tr>
@@ -1755,6 +1869,11 @@ No avocado at all
 
 </td>
 
+<td style="text-align:right;">
+
+0.1942
+</td>
+
 </tr>
 
 <tr>
@@ -1782,6 +1901,10 @@ No avocado at all
 <td style="text-align:right;">
 
 0.4003
+</td>
+
+<td style="text-align:right;">
+
 </td>
 
 <td style="text-align:right;">
@@ -1822,6 +1945,10 @@ No avocado at all
 0.9596
 </td>
 
+<td style="text-align:right;">
+
+</td>
+
 </tr>
 
 <tr>
@@ -1859,6 +1986,11 @@ No avocado at all
 
 </td>
 
+<td style="text-align:right;">
+
+\<.0001
+</td>
+
 </tr>
 
 <tr>
@@ -1886,6 +2018,10 @@ No avocado at all
 <td style="text-align:right;">
 
 0.0001
+</td>
+
+<td style="text-align:right;">
+
 </td>
 
 <td style="text-align:right;">
@@ -1926,6 +2062,10 @@ No avocado at all
 0.7660
 </td>
 
+<td style="text-align:right;">
+
+</td>
+
 </tr>
 
 <tr>
@@ -1963,6 +2103,11 @@ No avocado at all
 
 </td>
 
+<td style="text-align:right;">
+
+\<.0001
+</td>
+
 </tr>
 
 <tr>
@@ -1990,6 +2135,10 @@ No avocado at all
 <td style="text-align:right;">
 
 \<0.0001
+</td>
+
+<td style="text-align:right;">
+
 </td>
 
 <td style="text-align:right;">
@@ -2030,6 +2179,10 @@ No avocado at all
 0.9256
 </td>
 
+<td style="text-align:right;">
+
+</td>
+
 </tr>
 
 <tr>
@@ -2067,6 +2220,11 @@ No avocado at all
 
 </td>
 
+<td style="text-align:right;">
+
+\<.0001
+</td>
+
 </tr>
 
 <tr>
@@ -2094,6 +2252,10 @@ No avocado at all
 <td style="text-align:right;">
 
 \<0.0001
+</td>
+
+<td style="text-align:right;">
+
 </td>
 
 <td style="text-align:right;">
@@ -2132,6 +2294,10 @@ No avocado at all
 <td style="text-align:right;">
 
 0.9946
+</td>
+
+<td style="text-align:right;">
+
 </td>
 
 </tr>
@@ -2187,7 +2353,7 @@ Meal type
 
 <th style="text-align:left;">
 
-Preceding avocado intake
+Avocado intake
 </th>
 
 <th style="text-align:right;">
@@ -2213,6 +2379,11 @@ p-val: vs No avocado
 <th style="text-align:right;">
 
 p-val: vs \<1 avocado
+</th>
+
+<th style="text-align:right;">
+
+Trend p-val
 </th>
 
 </tr>
@@ -2256,6 +2427,11 @@ No avocado at all
 
 </td>
 
+<td style="text-align:right;">
+
+.9999
+</td>
+
 </tr>
 
 <tr>
@@ -2283,6 +2459,10 @@ No avocado at all
 <td style="text-align:right;">
 
 0.9010
+</td>
+
+<td style="text-align:right;">
+
 </td>
 
 <td style="text-align:right;">
@@ -2323,6 +2503,10 @@ No avocado at all
 0.3019
 </td>
 
+<td style="text-align:right;">
+
+</td>
+
 </tr>
 
 <tr>
@@ -2360,6 +2544,11 @@ No avocado at all
 
 </td>
 
+<td style="text-align:right;">
+
+\< .0001
+</td>
+
 </tr>
 
 <tr>
@@ -2387,6 +2576,10 @@ No avocado at all
 <td style="text-align:right;">
 
 0.0029
+</td>
+
+<td style="text-align:right;">
+
 </td>
 
 <td style="text-align:right;">
@@ -2427,6 +2620,10 @@ No avocado at all
 0.9777
 </td>
 
+<td style="text-align:right;">
+
+</td>
+
 </tr>
 
 <tr>
@@ -2464,6 +2661,11 @@ No avocado at all
 
 </td>
 
+<td style="text-align:right;">
+
+.9999
+</td>
+
 </tr>
 
 <tr>
@@ -2491,6 +2693,10 @@ No avocado at all
 <td style="text-align:right;">
 
 0.8999
+</td>
+
+<td style="text-align:right;">
+
 </td>
 
 <td style="text-align:right;">
@@ -2531,6 +2737,10 @@ No avocado at all
 0.9088
 </td>
 
+<td style="text-align:right;">
+
+</td>
+
 </tr>
 
 <tr>
@@ -2568,6 +2778,11 @@ No avocado at all
 
 </td>
 
+<td style="text-align:right;">
+
+0.00065
+</td>
+
 </tr>
 
 <tr>
@@ -2595,6 +2810,10 @@ No avocado at all
 <td style="text-align:right;">
 
 0.0053
+</td>
+
+<td style="text-align:right;">
+
 </td>
 
 <td style="text-align:right;">
@@ -2635,6 +2854,10 @@ No avocado at all
 0.9689
 </td>
 
+<td style="text-align:right;">
+
+</td>
+
 </tr>
 
 <tr>
@@ -2672,6 +2895,11 @@ No avocado at all
 
 </td>
 
+<td style="text-align:right;">
+
+0.00039
+</td>
+
 </tr>
 
 <tr>
@@ -2699,6 +2927,10 @@ No avocado at all
 <td style="text-align:right;">
 
 0.9941
+</td>
+
+<td style="text-align:right;">
+
 </td>
 
 <td style="text-align:right;">
@@ -2739,6 +2971,10 @@ No avocado at all
 0.0136
 </td>
 
+<td style="text-align:right;">
+
+</td>
+
 </tr>
 
 <tr>
@@ -2776,6 +3012,11 @@ No avocado at all
 
 </td>
 
+<td style="text-align:right;">
+
+0.26087
+</td>
+
 </tr>
 
 <tr>
@@ -2803,6 +3044,10 @@ No avocado at all
 <td style="text-align:right;">
 
 0.3217
+</td>
+
+<td style="text-align:right;">
+
 </td>
 
 <td style="text-align:right;">
@@ -2841,6 +3086,10 @@ No avocado at all
 <td style="text-align:right;">
 
 0.9991
+</td>
+
+<td style="text-align:right;">
+
 </td>
 
 </tr>
@@ -3069,7 +3318,7 @@ Meal type
 
 <th style="text-align:left;">
 
-Preceding avocado intake
+Avocado intake
 </th>
 
 <th style="text-align:right;">
@@ -3095,6 +3344,11 @@ p-val: vs No avocado
 <th style="text-align:right;">
 
 p-val: vs \<1 avocado
+</th>
+
+<th style="text-align:right;">
+
+Trend p-val
 </th>
 
 </tr>
@@ -3138,6 +3392,11 @@ No avocado at all
 
 </td>
 
+<td style="text-align:right;">
+
+0.2584
+</td>
+
 </tr>
 
 <tr>
@@ -3165,6 +3424,10 @@ No avocado at all
 <td style="text-align:right;">
 
 0.8513
+</td>
+
+<td style="text-align:right;">
+
 </td>
 
 <td style="text-align:right;">
@@ -3205,6 +3468,10 @@ No avocado at all
 0.3238
 </td>
 
+<td style="text-align:right;">
+
+</td>
+
 </tr>
 
 <tr>
@@ -3242,6 +3509,11 @@ No avocado at all
 
 </td>
 
+<td style="text-align:right;">
+
+\<.0001
+</td>
+
 </tr>
 
 <tr>
@@ -3269,6 +3541,10 @@ No avocado at all
 <td style="text-align:right;">
 
 0.0782
+</td>
+
+<td style="text-align:right;">
+
 </td>
 
 <td style="text-align:right;">
@@ -3309,6 +3585,10 @@ No avocado at all
 0.5859
 </td>
 
+<td style="text-align:right;">
+
+</td>
+
 </tr>
 
 <tr>
@@ -3346,6 +3626,11 @@ No avocado at all
 
 </td>
 
+<td style="text-align:right;">
+
+\<.0001
+</td>
+
 </tr>
 
 <tr>
@@ -3373,6 +3658,10 @@ No avocado at all
 <td style="text-align:right;">
 
 0.0059
+</td>
+
+<td style="text-align:right;">
+
 </td>
 
 <td style="text-align:right;">
@@ -3413,6 +3702,10 @@ No avocado at all
 0.9310
 </td>
 
+<td style="text-align:right;">
+
+</td>
+
 </tr>
 
 <tr>
@@ -3450,6 +3743,11 @@ No avocado at all
 
 </td>
 
+<td style="text-align:right;">
+
+0.3644
+</td>
+
 </tr>
 
 <tr>
@@ -3477,6 +3775,10 @@ No avocado at all
 <td style="text-align:right;">
 
 0.0755
+</td>
+
+<td style="text-align:right;">
+
 </td>
 
 <td style="text-align:right;">
@@ -3517,6 +3819,10 @@ No avocado at all
 0.2684
 </td>
 
+<td style="text-align:right;">
+
+</td>
+
 </tr>
 
 <tr>
@@ -3554,6 +3860,11 @@ No avocado at all
 
 </td>
 
+<td style="text-align:right;">
+
+0.3452
+</td>
+
 </tr>
 
 <tr>
@@ -3581,6 +3892,10 @@ No avocado at all
 <td style="text-align:right;">
 
 0.8991
+</td>
+
+<td style="text-align:right;">
+
 </td>
 
 <td style="text-align:right;">
@@ -3621,6 +3936,10 @@ No avocado at all
 0.9695
 </td>
 
+<td style="text-align:right;">
+
+</td>
+
 </tr>
 
 <tr>
@@ -3658,6 +3977,11 @@ No avocado at all
 
 </td>
 
+<td style="text-align:right;">
+
+0.2806
+</td>
+
 </tr>
 
 <tr>
@@ -3685,6 +4009,10 @@ No avocado at all
 <td style="text-align:right;">
 
 0.6434
+</td>
+
+<td style="text-align:right;">
+
 </td>
 
 <td style="text-align:right;">
@@ -3723,6 +4051,10 @@ No avocado at all
 <td style="text-align:right;">
 
 0.9932
+</td>
+
+<td style="text-align:right;">
+
 </td>
 
 </tr>

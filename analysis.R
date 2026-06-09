@@ -821,8 +821,10 @@ analytic_df2 <- analytic_df %>%
       meal_type %in% c("Midday meal", "Midday snack") ~ 2,
       meal_type %in% c("Evening meal", "Late night snack") ~ 0
     ),
-    meal_period = factor(meal_period, labels = c("Evening", "Morning", "Midday"))
-    )
+    meal_period = factor(meal_period, labels = c("Evening", "Morning", "Midday")),
+    avocado_intake_num = as.numeric(avocado_intake_cat),
+    lag_avocado_intake_num = as.numeric(lag_avocado_intake_cat)
+  )
 
 # Covariates
 covars <- c(
@@ -912,6 +914,12 @@ emmeans_tab %>%
     fill = "") +
   theme(legend.position = "bottom")
 
+# Model for trend p-values
+# Refit with numeric version of avocado intake cat
+log_food_kcal_tp <- update(log_food_kcal_0, . ~ . + avocado_intake_num * meal_type)
+emtrends(log_food_kcal_tp, ~ meal_type, var = "avocado_intake_num") %>% 
+  summary(infer = TRUE, adjust = "bonferroni")
+
 
 ## Energy density ---------------------------------------------------------
 
@@ -968,6 +976,12 @@ emmeans_tab %>%
     y = "Adjusted mean energy density (kcal/gram)",
     fill = "") +
   theme(legend.position = "bottom")
+
+# Model for trend p-values
+# Refit with numeric version of avocado intake cat
+energy_density_tp <- update(energy_density_0, . ~ . + avocado_intake_num * meal_type)
+emtrends(energy_density_tp, ~ meal_type, var = "avocado_intake_num") %>% 
+  summary(infer = TRUE, adjust = "bonferroni")
 
 
 # Effect of avocado intake on the subsequent meal -------------------------
@@ -1040,6 +1054,11 @@ pairs(emmeans_avocado, adjust = "tukey")
 # Check normalized residuals
 plot_residuals(log_food_kcal_1)
 
+# Model for trend p-values
+# Refit with numeric version of avocado intake cat
+log_food_kcal_tp <- update(log_food_kcal_0, . ~ . + lag_avocado_intake_num * meal_type)
+emtrends(log_food_kcal_tp, ~ meal_type, var = "lag_avocado_intake_num") %>% 
+  summary(infer = TRUE, adjust = "bonferroni")
 
 ## Energy density ---------------------------------------------------------
 
@@ -1174,3 +1193,8 @@ pairs(emmeans_avocado, adjust = "tukey")
 # Check normalized residuals
 plot_residuals(meal_interval_1)
 
+# Model for trend p-values
+# Refit with numeric version of avocado intake cat
+meal_interval_tp <- update(meal_interval_0, . ~ . + lag_avocado_intake_num * meal_type)
+emtrends(meal_interval_tp, ~ meal_type, var = "lag_avocado_intake_num") %>% 
+  summary(infer = TRUE, adjust = "bonferroni")

@@ -967,7 +967,9 @@ analytic_df2 <- analytic_df %>%
       meal_type %in% c("Midday meal", "Midday snack") ~ 2,
       meal_type %in% c("Evening meal", "Late night snack") ~ 0
     ),
-    meal_period = factor(meal_period, labels = c("Evening", "Morning", "Midday"))
+    meal_period = factor(meal_period, labels = c("Evening", "Morning", "Midday")),
+    avocado_intake_num = as.numeric(avocado_intake_cat),
+    lag_avocado_intake_num = as.numeric(lag_avocado_intake_cat)
     )
 
 # Covariates
@@ -1004,6 +1006,17 @@ log_food_kcal_0 <- lme(
 # Add avocado intake * meal type interaction
 log_food_kcal_1 <- update(log_food_kcal_0, . ~ . + avocado_intake_cat * meal_type)
 
+# Get trend p-values
+log_food_kcal_tp <- update(log_food_kcal_0, . ~ . + avocado_intake_num * meal_type)
+
+trend_pvals <- emtrends(log_food_kcal_tp, ~ meal_type, var = "avocado_intake_num") %>% 
+  summary(infer = TRUE, adjust = "bonferroni") %>% 
+  as.data.frame() %>%
+  select(meal_type, p.value) %>%
+  rename(trend_pval  = p.value) %>%
+  mutate(trend_pval = format.pval(trend_pval, digits = 2, eps = 0.0001) %>%
+           str_replace("1e-04", ".0001"))
+
 # Estimated marginal means
 emmeans_avocado <- emmeans(log_food_kcal_1, ~avocado_intake_cat | meal_type, weights = "proportional")
 pairs_avocado   <- pairs(emmeans_avocado, adjust = "tukey")
@@ -1011,20 +1024,25 @@ emmeans_tab     <- make_emmeans_tab(emmeans_avocado, pairs_avocado, exponentiate
 
 # Table format
 emmeans_tab %>%
-  select(-meal_or_snack) %>% 
+  select(-meal_or_snack) %>%
   select(meal_type, everything()) %>%
   mutate(across(where(is.character), ~replace_na(., ""))) %>%
+  left_join(trend_pvals, by = "meal_type") %>%
+  mutate(
+    trend_pval  = ifelse(avocado_intake_cat == "No avocado at all", trend_pval, "")
+  ) %>%
   kable(
     col.names = c(
-      "Meal type", 
-      "Avocado intake", 
-      "Adjusted mean", 
-      "Lower 95% CL", 
-      "Upper 95% CL", 
+      "Meal type",
+      "Avocado intake",
+      "Adjusted mean",
+      "Lower 95% CL",
+      "Upper 95% CL",
       "p-val: vs No avocado",
-      "p-val: vs <1 avocado"
-      ),
-    align     = c("l", "l", "r", "r", "r", "r", "r")
+      "p-val: vs <1 avocado",
+      "Trend p-val"
+    ),
+    align = c("l", "l", "r", "r", "r", "r", "r", "r")
   ) %>%
   kable_styling() %>%
   collapse_rows(columns = 1, valign = "top")
@@ -1089,6 +1107,17 @@ energy_density_0 <- update(
 # Add avocado intake * meal type interaction
 energy_density_1 <- update(energy_density_0, . ~ . + avocado_intake_cat * meal_type)
 
+# Get trend p-values
+energy_density_tp <- update(energy_density_0, . ~ . + avocado_intake_num * meal_type)
+
+trend_pvals <- emtrends(energy_density_tp, ~ meal_type, var = "avocado_intake_num") %>% 
+  summary(infer = TRUE, adjust = "bonferroni") %>% 
+  as.data.frame() %>%
+  select(meal_type, p.value) %>%
+  rename(trend_pval  = p.value) %>%
+  mutate(trend_pval = format.pval(trend_pval, digits = 2, eps = 0.0001) %>%
+           str_replace("1e-04", ".0001"))
+
 # Estimated marginal means
 emmeans_avocado <- emmeans(energy_density_1, ~avocado_intake_cat | meal_type, weights = "proportional")
 pairs_avocado   <- pairs(emmeans_avocado, adjust = "tukey")
@@ -1096,20 +1125,25 @@ emmeans_tab     <- make_emmeans_tab(emmeans_avocado, pairs_avocado, exponentiate
 
 # Table format
 emmeans_tab %>%
-  select(-meal_or_snack) %>% 
+  select(-meal_or_snack) %>%
   select(meal_type, everything()) %>%
   mutate(across(where(is.character), ~replace_na(., ""))) %>%
+  left_join(trend_pvals, by = "meal_type") %>%
+  mutate(
+    trend_pval  = ifelse(avocado_intake_cat == "No avocado at all", trend_pval, "")
+  ) %>%
   kable(
     col.names = c(
-      "Meal type", 
-      "Avocado intake", 
-      "Adjusted mean", 
-      "Lower 95% CL", 
-      "Upper 95% CL", 
+      "Meal type",
+      "Avocado intake",
+      "Adjusted mean",
+      "Lower 95% CL",
+      "Upper 95% CL",
       "p-val: vs No avocado",
-      "p-val: vs <1 avocado"
-      ),
-    align     = c("l", "l", "r", "r", "r", "r", "r")
+      "p-val: vs <1 avocado",
+      "Trend p-val"
+    ),
+    align = c("l", "l", "r", "r", "r", "r", "r", "r")
   ) %>%
   kable_styling() %>%
   collapse_rows(columns = 1, valign = "top")
@@ -1185,6 +1219,18 @@ log_food_kcal_0 <- lme(
 # Add avocado intake * meal type interaction
 log_food_kcal_1 <- update(log_food_kcal_0, . ~ . + lag_avocado_intake_cat * meal_type)
 
+# Get trend p-values
+log_food_kcal_tp <- update(log_food_kcal_0, . ~ . + lag_avocado_intake_num * meal_type)
+
+trend_pvals <- emtrends(log_food_kcal_tp, ~ meal_type, var = "lag_avocado_intake_num") %>% 
+  summary(infer = TRUE, adjust = "bonferroni") %>% 
+  as.data.frame() %>%
+  select(meal_type, p.value) %>%
+  rename(trend_pval  = p.value) %>%
+  mutate(trend_pval = format.pval(trend_pval, digits = 2, eps = 0.0001) %>%
+           str_replace("1e-04", ".0001") %>% 
+           str_replace("1.00000", ".9999"))
+
 # Estimated marginal means
 emmeans_avocado <- emmeans(log_food_kcal_1, ~lag_avocado_intake_cat | meal_type, weights = "proportional")
 pairs_avocado   <- pairs(emmeans_avocado, adjust = "tukey")
@@ -1192,20 +1238,25 @@ emmeans_tab     <- make_emmeans_tab(emmeans_avocado, pairs_avocado, exponentiate
 
 # Table format
 emmeans_tab %>%
-  select(-meal_or_snack) %>% 
+  select(-meal_or_snack) %>%
   select(meal_type, everything()) %>%
   mutate(across(where(is.character), ~replace_na(., ""))) %>%
+  left_join(trend_pvals, by = "meal_type") %>%
+  mutate(
+    trend_pval  = ifelse(lag_avocado_intake_cat == "No avocado at all", trend_pval, "")
+  ) %>%
   kable(
     col.names = c(
-      "Meal type", 
-      "Preceding avocado intake", 
-      "Adjusted mean", 
-      "Lower 95% CL", 
-      "Upper 95% CL", 
+      "Meal type",
+      "Avocado intake",
+      "Adjusted mean",
+      "Lower 95% CL",
+      "Upper 95% CL",
       "p-val: vs No avocado",
-      "p-val: vs <1 avocado"
-      ),
-    align     = c("l", "l", "r", "r", "r", "r", "r")
+      "p-val: vs <1 avocado",
+      "Trend p-val"
+    ),
+    align = c("l", "l", "r", "r", "r", "r", "r", "r")
   ) %>%
   kable_styling() %>%
   collapse_rows(columns = 1, valign = "top")
@@ -1342,6 +1393,18 @@ meal_interval_0 <- update(
 # Add avocado intake * meal type interaction
 meal_interval_1 <- update(meal_interval_0, . ~ . + lag_avocado_intake_cat * meal_type)
 
+# Get trend p-values
+meal_interval_tp <- update(meal_interval_0, . ~ . + lag_avocado_intake_num * meal_type)
+
+trend_pvals <- emtrends(meal_interval_tp, ~ meal_type, var = "lag_avocado_intake_num") %>% 
+  summary(infer = TRUE) %>% 
+  as.data.frame() %>%
+  select(meal_type, p.value) %>%
+  rename(trend_pval  = p.value) %>%
+  mutate(trend_pval = format.pval(trend_pval, digits = 4, eps = 0.0001) %>%
+           str_replace("1e-04", ".0001") %>% 
+           str_replace("1.00000", ".9999"))
+
 # Estimated marginal means
 emmeans_avocado <- emmeans(meal_interval_1, ~lag_avocado_intake_cat | meal_type, weights = "proportional")
 pairs_avocado   <- pairs(emmeans_avocado, adjust = "tukey")
@@ -1349,20 +1412,25 @@ emmeans_tab     <- make_emmeans_tab(emmeans_avocado, pairs_avocado, digits = 2)
 
 # Table format
 emmeans_tab %>%
-  select(-meal_or_snack) %>% 
+  select(-meal_or_snack) %>%
   select(meal_type, everything()) %>%
   mutate(across(where(is.character), ~replace_na(., ""))) %>%
+  left_join(trend_pvals, by = "meal_type") %>%
+  mutate(
+    trend_pval  = ifelse(lag_avocado_intake_cat == "No avocado at all", trend_pval, "")
+  ) %>%
   kable(
     col.names = c(
-      "Meal type", 
-      "Preceding avocado intake", 
-      "Adjusted mean", 
-      "Lower 95% CL", 
-      "Upper 95% CL", 
+      "Meal type",
+      "Avocado intake",
+      "Adjusted mean",
+      "Lower 95% CL",
+      "Upper 95% CL",
       "p-val: vs No avocado",
-      "p-val: vs <1 avocado"
-      ),
-    align     = c("l", "l", "r", "r", "r", "r", "r")
+      "p-val: vs <1 avocado",
+      "Trend p-val"
+    ),
+    align = c("l", "l", "r", "r", "r", "r", "r", "r")
   ) %>%
   kable_styling() %>%
   collapse_rows(columns = 1, valign = "top")
